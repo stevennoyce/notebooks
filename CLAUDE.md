@@ -14,6 +14,7 @@ Public repo, served by GitHub Pages at https://stevennoyce.github.io/notebooks/.
 - **One passphrase for every notebook:** the `SITE_PASSPHRASE` secret, the same value in each vault repo. The browser can remember the derived key (`nb:key` in localStorage). To change the passphrase, set the new value in every vault repo and re-run each publish workflow.
 - **Checkmarks are per device** (`nb:checks:<id>:<path>` in localStorage) and never write back to a vault. The site is read-only by design (the user chose this on 2026-09-26).
 - **Dataview:** the viewer runs a subset of `TABLE` queries: FROM, WHERE (`=`, `!=`, bare field, `!field`, joined with AND), SORT, LIMIT and GROUP BY with `length(rows)` or `length(filter(rows.x, (d) => d))`. Anything else shows an "only in Obsidian" note.
+- **Look:** dark "aurora" theme by default, with drifting accent glows, glass cards, gradient headings (`.gt`; leading emoji go in `.emo` so they keep their color), and Sora with Inter. Light is opt-in through the theme button (`nb:theme` = `light`), and the theme is passed to tool iframes as `data-theme`.
 - **Tool pages** run in a `srcdoc` iframe. They can open a note with `parent.postMessage({ openNote: "Title" }, '*')`.
 
 ## Notebooks published here
