@@ -1,0 +1,1133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#faf6f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16121a" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Notebooks">
+<title>Notebooks</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf6f2;
+  --surface: #ffffff;
+  --surface-2: #f4eee8;
+  --text: #2b2421;
+  --muted: #776b65;
+  --border: #e8dfd7;
+  --accent: var(--p-accent, #c0395f);
+  --accent-soft: color-mix(in srgb, var(--accent) 11%, var(--surface));
+  --accent-line: color-mix(in srgb, var(--accent) 35%, var(--border));
+  --verify-bg: #fff2cc;
+  --verify-fg: #7a5600;
+  --mark: #ffe58a;
+  --shadow: 0 1px 2px rgba(60, 30, 20, .05), 0 6px 22px rgba(60, 30, 20, .07);
+  --radius: 14px;
+  --topbar: 58px;
+  --sidebar: 290px;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16121a; --surface: #201a24; --surface-2: #2a2230; --text: #eee7ea; --muted: #a99ca4;
+    --border: #352c3a; --accent: var(--p-accent-dark, #f0789d); --verify-bg: #3b321a; --verify-fg: #f0d58b;
+    --mark: #6b5a12; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 26px rgba(0,0,0,.35); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #16121a; --surface: #201a24; --surface-2: #2a2230; --text: #eee7ea; --muted: #a99ca4;
+  --border: #352c3a; --accent: var(--p-accent-dark, #f0789d); --verify-bg: #3b321a; --verify-fg: #f0d58b;
+  --mark: #6b5a12; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 26px rgba(0,0,0,.35); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.62 var(--font); -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-underline-offset: 2px; text-decoration-thickness: 1px; }
+button { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+/* ---------- lock screen ---------- */
+.lock {
+  min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px;
+  background:
+    radial-gradient(1000px 500px at 10% -10%, color-mix(in srgb, #c0395f 16%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 110% 110%, color-mix(in srgb, #2f7a68 16%, transparent), transparent 60%),
+    var(--bg);
+}
+.lock-card {
+  width: min(400px, 100%); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 22px; padding: 34px 28px 26px; box-shadow: var(--shadow); text-align: center;
+}
+.lock-emoji { font-size: 44px; line-height: 1; }
+.lock-card h1 { font-family: var(--serif); font-weight: 650; font-size: 30px; margin: 12px 0 4px; }
+.lock-card p { color: var(--muted); margin: 0 0 20px; }
+.lock-card input[type=password] {
+  width: 100%; font: inherit; font-size: 17px; padding: 13px 14px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none;
+}
+.lock-card input[type=password]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.remember { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 14px 0 18px; color: var(--muted); font-size: 14px; }
+.remember input { accent-color: var(--accent); width: 16px; height: 16px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 0; border-radius: 12px; padding: 12px 18px; font-weight: 600; cursor: pointer;
+  background: var(--accent); color: #fff; text-decoration: none;
+}
+.btn:disabled { opacity: .6; cursor: progress; }
+.btn.block { width: 100%; font-size: 16px; }
+.btn.ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.lock-msg { min-height: 1.4em; margin: 12px 0 0 !important; color: #c0392b !important; font-size: 14px; }
+
+/* ---------- top bar ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 30; height: var(--topbar);
+  display: flex; align-items: center; gap: 8px; padding: 0 12px;
+  padding-top: env(safe-area-inset-top); height: calc(var(--topbar) + env(safe-area-inset-top));
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.icon-btn {
+  flex: none; width: 40px; height: 40px; border-radius: 10px; border: 0; background: transparent;
+  display: grid; place-items: center; cursor: pointer; font-size: 19px; color: var(--muted);
+}
+.icon-btn:hover { background: var(--surface-2); color: var(--text); }
+.brand {
+  display: flex; align-items: center; gap: 8px; min-width: 0; text-decoration: none; color: var(--text);
+  font-family: var(--serif); font-weight: 650; font-size: 19px; white-space: nowrap;
+}
+.brand span { overflow: hidden; text-overflow: ellipsis; }
+.search { flex: 1; display: flex; justify-content: flex-end; min-width: 0; }
+.search input {
+  width: min(360px, 100%); font: inherit; font-size: 15px; padding: 8px 12px 8px 34px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface) no-repeat 11px 50% / 15px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23998' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  color: var(--text); outline: none;
+}
+.search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+@media (max-width: 600px) {
+  .search input { width: 40px; padding-right: 0; cursor: pointer; transition: width .2s; }
+  .search input::placeholder { color: transparent; }
+  .search input:focus, .search input:not(:placeholder-shown) { width: 100%; cursor: text; padding-right: 10px; }
+  .search input:focus::placeholder { color: var(--muted); }
+  .search:focus-within ~ #themeBtn, .topbar:has(.search:focus-within) #brandText { display: none; }
+}
+
+/* ---------- shell ---------- */
+.shell { display: flex; min-height: calc(100dvh - var(--topbar)); }
+.sidebar {
+  width: var(--sidebar); flex: none; border-right: 1px solid var(--border); background: var(--surface);
+  position: sticky; top: calc(var(--topbar) + env(safe-area-inset-top));
+  height: calc(100dvh - var(--topbar) - env(safe-area-inset-top));
+  overflow-y: auto; overscroll-behavior: contain; padding: 14px 10px 40px; font-size: 14.5px;
+}
+.main { flex: 1; min-width: 0; }
+.scrim { display: none; }
+body.hub-view .sidebar, body.hub-view #menuBtn, body.hub-view .search { display: none; }
+@media (max-width: 959px) {
+  .sidebar {
+    position: fixed; z-index: 40; left: 0; top: 0; height: 100dvh; width: min(86vw, 320px);
+    transform: translateX(-102%); transition: transform .22s ease; box-shadow: var(--shadow);
+    padding-top: calc(16px + env(safe-area-inset-top));
+  }
+  body.nav-open .sidebar { transform: none; }
+  body.nav-open .scrim { display: block; position: fixed; inset: 0; z-index: 35; background: rgba(0,0,0,.35); }
+}
+@media (min-width: 960px) { #menuBtn { display: none; } }
+
+.nav-section { margin: 4px 0 14px; }
+.nav-label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 6px 10px; font-weight: 600; }
+.nav-link {
+  display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px;
+  color: var(--text); text-decoration: none; line-height: 1.35;
+}
+.nav-link:hover { background: var(--surface-2); }
+.nav-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.nav-link .ico { width: 20px; text-align: center; flex: none; }
+.sidebar details > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 8px; font-weight: 600; user-select: none;
+}
+.sidebar details > summary::-webkit-details-marker { display: none; }
+.sidebar details > summary::after { content: "›"; margin-left: auto; color: var(--muted); transition: transform .15s; font-size: 18px; line-height: 1; }
+.sidebar details[open] > summary::after { transform: rotate(90deg); }
+.sidebar details > summary:hover { background: var(--surface-2); }
+.sidebar details .children { margin-left: 14px; padding-left: 6px; border-left: 1px solid var(--border); }
+.sidebar details details > summary { font-weight: 500; }
+.count { color: var(--muted); font-weight: 400; font-size: 12px; }
+.nav-foot { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px; }
+
+/* ---------- content ---------- */
+.page { max-width: 820px; margin: 0 auto; padding: 26px 20px 80px; }
+@media (max-width: 600px) { .page { padding: 18px 16px 70px; } }
+.crumbs { font-size: 13.5px; color: var(--muted); margin-bottom: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.crumbs a { color: var(--muted); text-decoration: none; }
+.crumbs a:hover { color: var(--accent); }
+.note-head h1 { font-family: var(--serif); font-weight: 650; font-size: clamp(28px, 5vw, 38px); line-height: 1.15; margin: 0 0 10px; letter-spacing: -.01em; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+.chip { display: inline-block; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
+.props { margin: -6px 0 18px; font-size: 13.5px; }
+.props summary { cursor: pointer; color: var(--muted); }
+.props dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 8px 0 0; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+.props dt { color: var(--muted); }
+.props dd { margin: 0; overflow-wrap: anywhere; }
+
+.progress { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin: 0 0 22px; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; box-shadow: var(--shadow); }
+.bar { flex: 1 1 140px; height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .25s; }
+.progress .num { font-weight: 600; font-size: 14px; white-space: nowrap; }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 9px; padding: 2px; }
+.seg button { border: 0; background: transparent; padding: 4px 10px; border-radius: 7px; font-size: 13px; cursor: pointer; color: var(--muted); }
+.seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.08); font-weight: 600; }
+.linkish { border: 0; background: none; color: var(--muted); font-size: 12.5px; cursor: pointer; text-decoration: underline; padding: 0; }
+
+.md { overflow-wrap: break-word; }
+.md > :first-child { margin-top: 0; }
+.md h1, .md h2, .md h3, .md h4 { font-family: var(--serif); font-weight: 650; line-height: 1.25; scroll-margin-top: calc(var(--topbar) + 16px); }
+.md h1 { font-size: 30px; }
+.md h2 { font-size: 23px; margin: 34px 0 10px; padding-top: 6px; }
+.md h3 { font-size: 18.5px; margin: 26px 0 8px; }
+.md h4 { font-size: 16px; margin: 20px 0 6px; }
+.md p { margin: 10px 0; }
+.md ul, .md ol { padding-left: 1.4em; margin: 8px 0; }
+.md li { margin: 4px 0; }
+.md li > p { margin: 4px 0; }
+.md hr { border: 0; border-top: 1px solid var(--border); margin: 28px 0; }
+.md img { max-width: 100%; }
+.md code { font: 13.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
+.md pre { background: var(--surface-2); border-radius: 10px; padding: 12px 14px; overflow-x: auto; }
+.md pre code { background: none; padding: 0; }
+.md blockquote { margin: 14px 0; padding: 4px 16px; border-left: 3px solid var(--accent-line); background: var(--surface); border-radius: 0 10px 10px 0; color: var(--text); }
+.md a.code-link { text-decoration: none; }
+.table-wrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.md table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+.md th, .md td { padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.md th { background: var(--surface-2); font-weight: 600; white-space: nowrap; }
+.md tr:last-child td { border-bottom: 0; }
+.md th:empty { padding: 0; }
+
+.md li.task { list-style: none; position: relative; }
+.md li.task > input[type=checkbox], .md li.task > p > input[type=checkbox] {
+  position: absolute; left: -1.45em; top: .28em; width: 1.08em; height: 1.08em; margin: 0;
+  accent-color: var(--accent); cursor: pointer;
+}
+.md li.task > p { margin: 0; }
+.md li.task.done { color: var(--muted); }
+.md li.task.done > strong, .md li.task.done > p > strong { color: var(--muted); }
+.filter-todo li.task.done { display: none; }
+.filter-done li.task:not(.done) { display: none; }
+
+.verify { display: inline-block; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; padding: 0 7px; border-radius: 99px; background: var(--verify-bg); color: var(--verify-fg); vertical-align: 1px; }
+a.wl { text-decoration: none; border-bottom: 1px solid var(--accent-line); }
+a.wl:hover { border-bottom-color: var(--accent); }
+.wl.broken { color: var(--muted); border-bottom: 1px dashed var(--border); }
+mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1px; }
+
+.callout { margin: 16px 0; border-radius: 12px; padding: 12px 16px; background: color-mix(in srgb, var(--c) 9%, var(--surface)); border: 1px solid color-mix(in srgb, var(--c) 28%, var(--border)); }
+.callout-title { font-weight: 600; color: color-mix(in srgb, var(--c) 75%, var(--text)); margin-bottom: 2px; }
+.callout-body > :first-child { margin-top: 4px; }
+.callout-body > :last-child { margin-bottom: 0; }
+.c-blue { --c: #3b7bd6; } .c-teal { --c: #1f9a8a; } .c-green { --c: #3f9a4a; } .c-amber { --c: #c98a12; }
+.c-orange { --c: #d9731f; } .c-red { --c: #d24545; } .c-purple { --c: #8a55c9; } .c-gray { --c: #8a8480; }
+
+.dv-note { color: var(--muted); font-size: 14px; background: var(--surface); border: 1px dashed var(--border); border-radius: 10px; padding: 10px 14px; margin: 12px 0; }
+
+/* cards */
+.tool-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin: 0 0 28px; }
+.tool-card {
+  display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
+  text-decoration: none; color: var(--text); transition: transform .12s, border-color .12s;
+}
+.tool-card:hover { transform: translateY(-2px); border-color: var(--accent-line); }
+.tool-card .ti { font-size: 24px; }
+.tool-card b { font-weight: 600; }
+.tool-card span { color: var(--muted); font-size: 13px; }
+
+.hub { max-width: 860px; margin: 0 auto; padding: 44px 20px 80px; }
+.hub h1 { font-family: var(--serif); font-weight: 650; font-size: clamp(30px, 6vw, 44px); margin: 0 0 6px; letter-spacing: -.01em; }
+.hub > p { color: var(--muted); margin: 0 0 30px; }
+.proj-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; }
+.proj-card {
+  --accent: var(--pa); position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 6px;
+  padding: 24px 22px 20px; border-radius: 20px; text-decoration: none; color: var(--text);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--pa) 14%, var(--surface)), var(--surface) 70%);
+  border: 1px solid color-mix(in srgb, var(--pa) 25%, var(--border)); box-shadow: var(--shadow);
+  transition: transform .15s, box-shadow .15s;
+}
+.proj-card:hover { transform: translateY(-3px); }
+.proj-card .pe { font-size: 40px; line-height: 1; margin-bottom: 8px; }
+.proj-card h2 { font-family: var(--serif); font-weight: 650; font-size: 24px; margin: 0; }
+.proj-card p { margin: 0; color: var(--muted); }
+.proj-card .go { margin-top: 12px; font-weight: 600; color: var(--pa); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .proj-card { --pa: var(--pad); } }
+:root[data-theme="dark"] .proj-card { --pa: var(--pad); }
+.hub-foot { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 10px; color: var(--muted); font-size: 13.5px; align-items: center; }
+
+.results { list-style: none; padding: 0; margin: 0; }
+.results li { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+.results a.rt { font-weight: 600; text-decoration: none; }
+.results .rp { font-size: 12.5px; color: var(--muted); }
+.results .rs { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
+
+.tool-frame { height: calc(100dvh - var(--topbar) - env(safe-area-inset-top)); display: flex; flex-direction: column; }
+.tool-frame iframe { flex: 1; width: 100%; border: 0; background: var(--bg); }
+.tool-bar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; font-size: 14px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.tool-bar b { font-weight: 600; }
+.copy-row { display: flex; gap: 8px; margin: 10px 0 16px; }
+.copy-row input { flex: 1; min-width: 0; font: 13px ui-monospace, Menlo, monospace; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); }
+.btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 20px; }
+
+.foot { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
+.loading { padding: 60px 20px; text-align: center; color: var(--muted); }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation-duration: 0s !important; } }
+</style>
+</head>
+<body>
+
+<div id="lock" class="lock" hidden>
+  <form class="lock-card" id="lockForm" autocomplete="on">
+    <div class="lock-emoji">📚</div>
+    <h1>Notebooks</h1>
+    <p>Enter the family passphrase to open.</p>
+    <input type="text" name="username" value="notebooks" autocomplete="username" hidden>
+    <input id="pass" type="password" autocomplete="current-password" placeholder="Passphrase" aria-label="Passphrase" required>
+    <label class="remember"><input id="remember" type="checkbox" checked> Remember on this device</label>
+    <button id="unlockBtn" class="btn block" type="submit">Unlock</button>
+    <p id="lockMsg" class="lock-msg" role="alert"></p>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header class="topbar">
+    <button id="menuBtn" class="icon-btn" aria-label="Open menu">☰</button>
+    <a id="brand" class="brand" href="#/"><span id="brandEmoji">📚</span><span id="brandText">Notebooks</span></a>
+    <form id="searchForm" class="search" role="search"><input id="q" type="search" placeholder="Search" aria-label="Search this notebook" enterkeyhint="search"></form>
+    <button id="themeBtn" class="icon-btn" aria-label="Change theme" title="Theme">◐</button>
+  </header>
+  <div class="shell">
+    <nav id="sidebar" class="sidebar" aria-label="Notebook"></nav>
+    <div id="scrim" class="scrim"></div>
+    <main id="main" class="main"></main>
+  </div>
+</div>
+
+<script src="marked.min.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  // Must match pack.mjs.
+  const SALT = 'notebooks-v1', ITERATIONS = 600000, MAGIC = 'NBK1';
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const enc = encodeURIComponent;
+  const te = new TextEncoder();
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const store = {
+    get(k, d = null) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } },
+    del(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } },
+  };
+  const b64enc = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const b64dec = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  const natural = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+  let KEY = null;
+  let PROJECTS = [];
+  const VAULTS = {};
+  let cur = null; // { proj, v }
+
+  // ---------------------------------------------------------------- crypto
+  async function deriveKey(pass) {
+    const base = await crypto.subtle.importKey('raw', te.encode(pass), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: te.encode(SALT), iterations: ITERATIONS, hash: 'SHA-256' },
+      base, { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
+  }
+
+  async function loadVault(pid, key = KEY) {
+    if (VAULTS[pid]) return VAULTS[pid];
+    const res = await fetch(pid + '/vault.bin', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('download failed (' + res.status + ')');
+    const buf = new Uint8Array(await res.arrayBuffer());
+    if (new TextDecoder().decode(buf.subarray(0, 4)) !== MAGIC) throw new Error('unexpected file format');
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.subarray(4, 16) }, key, buf.subarray(16));
+    const text = await new Response(new Blob([plain]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+    return (VAULTS[pid] = prepVault(JSON.parse(text)));
+  }
+
+  // ---------------------------------------------------------------- vault model
+  function yval(s) {
+    s = s.trim();
+    if (!s) return null;
+    if (/^\[.*\]$/.test(s)) return s.slice(1, -1).split(',').map(yval).filter((x) => x != null);
+    if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s);
+    if (s === 'true' || s === 'false') return s === 'true';
+    if (/^(["']).*\1$/.test(s)) return s.slice(1, -1);
+    return s;
+  }
+  function parseFrontmatter(md) {
+    const m = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(md);
+    if (!m) return [{}, md];
+    const fm = {};
+    let last = null;
+    for (const line of m[1].split(/\r?\n/)) {
+      const kv = /^([\w][\w -]*?):\s*(.*)$/.exec(line);
+      if (kv) { last = kv[1]; fm[last] = yval(kv[2]); continue; }
+      const li = /^\s*-\s+(.*)$/.exec(line);
+      if (li && last) { if (!Array.isArray(fm[last])) fm[last] = []; fm[last].push(yval(li[1])); }
+    }
+    return [fm, md.slice(m[0].length)];
+  }
+  function prepVault(v) {
+    v.byPath = new Map();
+    v.byTitle = new Map();
+    for (const n of v.notes) {
+      const [fm, body] = parseFrontmatter(n.md);
+      n.fm = fm;
+      n.body = body;
+      n.title = n.path.split('/').pop();
+      n.dir = n.path.includes('/') ? n.path.slice(0, n.path.lastIndexOf('/')) : '';
+      v.byPath.set(n.path.toLowerCase(), n);
+      if (!v.byTitle.has(n.title.toLowerCase())) v.byTitle.set(n.title.toLowerCase(), n);
+    }
+    v.homeNote = v.byPath.get(String(v.home).toLowerCase()) || v.notes[0];
+    return v;
+  }
+  function resolve(v, name) {
+    const k = name.trim().replace(/\.md$/i, '').replace(/^\.?\//, '').toLowerCase();
+    return v.byPath.get(k) || v.byTitle.get(k) || v.byTitle.get(k.split('/').pop()) || null;
+  }
+  const prettyDir = (name) => name.replace(/^\d+\s+/, '').replace(/^_/, '');
+  const slug = (s) => String(s).toLowerCase().replace(/<[^>]+>/g, '').replace(/[^\p{L}\p{N}\s-]/gu, '').trim().replace(/\s+/g, '-');
+
+  // ---------------------------------------------------------------- routes
+  const path2url = (p) => p.split('/').map(enc).join('/');
+  const url = {
+    hub: () => '#/',
+    project: (pid) => '#/' + enc(pid),
+    note: (pid, p, extra) => '#/' + enc(pid) + '/n/' + path2url(p) + (extra ? '?' + extra : ''),
+    tool: (pid, id) => '#/' + enc(pid) + '/t/' + enc(id),
+    search: (pid, q) => '#/' + enc(pid) + '/s?q=' + enc(q),
+  };
+  function parseRoute() {
+    let raw = location.hash.replace(/^#\/?/, '');
+    let qs = '';
+    const qi = raw.indexOf('?');
+    if (qi >= 0) { qs = raw.slice(qi + 1); raw = raw.slice(0, qi); }
+    const parts = raw.split('/').filter((x, i) => x || i < 2).map((x) => { try { return decodeURIComponent(x); } catch (e) { return x; } });
+    return { pid: parts[0] || '', kind: parts[1] || '', rest: parts.slice(2).join('/'), params: new URLSearchParams(qs) };
+  }
+
+  // ---------------------------------------------------------------- theme
+  const THEMES = [null, 'light', 'dark'];
+  function applyTheme() {
+    const t = store.get('nb:theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme');
+    $('#themeBtn').textContent = t === 'light' ? '☀' : t === 'dark' ? '☾' : '◐';
+    $('#themeBtn').title = 'Theme: ' + (t || 'automatic');
+  }
+  $('#themeBtn').addEventListener('click', () => {
+    const t = store.get('nb:theme');
+    store.set('nb:theme', THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]);
+    applyTheme();
+  });
+
+  // ---------------------------------------------------------------- nav drawer
+  const openNav = () => document.body.classList.add('nav-open');
+  const closeNav = () => document.body.classList.remove('nav-open');
+  $('#menuBtn').addEventListener('click', openNav);
+  $('#scrim').addEventListener('click', closeNav);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeNav();
+    if (e.key === '/' && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && cur) { e.preventDefault(); $('#q').focus(); }
+  });
+
+  // ---------------------------------------------------------------- lock
+  function showLock(msg) {
+    $('#app').hidden = true;
+    $('#lock').hidden = false;
+    $('#lockMsg').textContent = msg || '';
+    setTimeout(() => $('#pass').focus(), 50);
+  }
+  $('#lockForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('#unlockBtn');
+    btn.disabled = true;
+    btn.textContent = 'Unlocking…';
+    $('#lockMsg').textContent = '';
+    try {
+      const key = await deriveKey($('#pass').value);
+      await verifyKey(key);
+      KEY = key;
+      if ($('#remember').checked) store.set('nb:key', b64enc(await crypto.subtle.exportKey('raw', key)));
+      $('#pass').value = '';
+      start();
+    } catch (err) {
+      $('#lockMsg').textContent = err && err.name === 'OperationError'
+        ? "That passphrase didn't work. Try again?"
+        : 'Could not open the notebooks: ' + (err && err.message || err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Unlock';
+    }
+  });
+  async function verifyKey(key) {
+    if (!PROJECTS.length) return;
+    const want = parseRoute().pid;
+    const pid = PROJECTS.some((p) => p.id === want) ? want : PROJECTS[0].id;
+    for (const k of Object.keys(VAULTS)) delete VAULTS[k];
+    await loadVault(pid, key);
+  }
+  function lockNow() {
+    store.del('nb:key');
+    location.hash = '#/';
+    location.reload();
+  }
+
+  // ---------------------------------------------------------------- project chrome
+  function setProject(proj, v) {
+    const root = document.documentElement.style;
+    if (proj) {
+      root.setProperty('--p-accent', proj.accent);
+      root.setProperty('--p-accent-dark', proj.accentDark);
+      $('#brandEmoji').textContent = proj.emoji;
+      $('#brandText').textContent = proj.title;
+      $('#brand').href = url.project(proj.id);
+      $('#q').placeholder = 'Search ' + proj.title;
+      document.body.classList.remove('hub-view');
+    } else {
+      root.removeProperty('--p-accent');
+      root.removeProperty('--p-accent-dark');
+      $('#brandEmoji').textContent = '📚';
+      $('#brandText').textContent = 'Notebooks';
+      $('#brand').href = '#/';
+      document.body.classList.add('hub-view');
+    }
+    if (!v) {
+      // Hub, or a notebook still loading: no sidebar yet.
+      cur = null;
+      $('#sidebar').innerHTML = '';
+    } else if (!cur || cur.v !== v) {
+      cur = { proj, v };
+      $('#sidebar').innerHTML = sidebarHTML(proj, v);
+      wireSidebar(v);
+    }
+  }
+
+  function sidebarHTML(proj, v) {
+    const pid = proj.id;
+    const tree = { dirs: new Map(), notes: [] };
+    for (const n of v.notes) {
+      let node = tree;
+      if (n.dir) for (const seg of n.dir.split('/')) {
+        if (!node.dirs.has(seg)) node.dirs.set(seg, { dirs: new Map(), notes: [] });
+        node = node.dirs.get(seg);
+      }
+      node.notes.push(n);
+    }
+    const countNotes = (node) => node.notes.length + [...node.dirs.values()].reduce((a, d) => a + countNotes(d), 0);
+    const openSet = new Set(store.get('nb:open:' + pid, null) || [...tree.dirs.keys()]);
+    const notesHTML = (arr) => arr
+      .filter((n) => n !== v.homeNote)
+      .sort((a, b) => natural.compare(a.title, b.title))
+      .map((n) => `<a class="nav-link" data-path="${esc(n.path)}" href="${url.note(pid, n.path)}">${esc(n.title)}</a>`).join('');
+    const dirsHTML = (node, prefix, depth) => {
+      const order = depth === 0 ? v.folderOrder : [];
+      const names = [...node.dirs.keys()].sort((a, b) => {
+        const ia = order.indexOf(a), ib = order.indexOf(b);
+        if (ia >= 0 || ib >= 0) return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+        return natural.compare(a, b);
+      });
+      return names.map((name) => {
+        const d = node.dirs.get(name);
+        const full = prefix ? prefix + '/' + name : name;
+        const icon = depth === 0 ? (v.folderIcons[name] || '📁') : '';
+        return `<details data-dir="${esc(full)}"${openSet.has(full) ? ' open' : ''}>
+          <summary>${icon ? `<span class="ico">${icon}</span>` : ''}${esc(prettyDir(name))} <span class="count">${countNotes(d)}</span></summary>
+          <div class="children">${notesHTML(d.notes)}${dirsHTML(d, full, depth + 1)}</div></details>`;
+      }).join('');
+    };
+    const tools = (v.tools || []).map((t) =>
+      `<a class="nav-link" data-tool="${esc(t.id)}" href="${url.tool(pid, t.id)}"><span class="ico">${t.icon}</span>${esc(t.title)}</a>`).join('');
+    return `
+      <div class="nav-section">
+        <a class="nav-link" data-path="${esc(v.homeNote.path)}" href="${url.project(pid)}"><span class="ico">🏠</span>${esc(v.homeNote.title === 'Home' ? 'Home' : v.homeNote.title)}</a>
+        ${notesHTML(tree.notes)}
+      </div>
+      ${tools ? `<div class="nav-section"><div class="nav-label">Tools</div>${tools}</div>` : ''}
+      <div class="nav-section"><div class="nav-label">Notes</div>${dirsHTML(tree, '', 0)}</div>
+      <div class="nav-foot">
+        <a class="nav-link" href="#/"><span class="ico">📚</span>All notebooks</a>
+        <a class="nav-link" href="#" data-lock><span class="ico">🔒</span>Lock this device</a>
+      </div>`;
+  }
+  function wireSidebar(v) {
+    const pid = v.id;
+    $$('#sidebar details').forEach((d) => d.addEventListener('toggle', () => {
+      store.set('nb:open:' + pid, $$('#sidebar details[open]').map((x) => x.dataset.dir));
+    }));
+    $('#sidebar [data-lock]').addEventListener('click', (e) => { e.preventDefault(); lockNow(); });
+  }
+  function markActive(sel) {
+    $$('#sidebar .active').forEach((a) => a.classList.remove('active'));
+    const a = sel && $(sel, $('#sidebar'));
+    if (!a) return;
+    a.classList.add('active');
+    for (let d = a.parentElement.closest('details'); d; d = d.parentElement.closest('details')) d.open = true;
+    const sb = $('#sidebar');
+    const r = a.getBoundingClientRect(), s = sb.getBoundingClientRect();
+    if (r.top < s.top || r.bottom > s.bottom) a.scrollIntoView({ block: 'center' });
+  }
+
+  // ---------------------------------------------------------------- markdown
+  function renderMarkdown(v, n) {
+    // Leave code alone; turn [[wikilinks]] into links everywhere else.
+    const segs = n.body.split(/(```[\s\S]*?```|`[^`\n]+`)/);
+    for (let i = 0; i < segs.length; i += 2) {
+      segs[i] = segs[i].replace(/!?\[\[([^\]\n]+?)\]\]/g, (m, inner) => wikilink(v, n, inner));
+    }
+    return marked.parse(segs.join(''), { gfm: true });
+  }
+  function wikilink(v, from, inner) {
+    inner = inner.replace(/\\\|/g, '|');
+    const bar = inner.indexOf('|');
+    const target = bar >= 0 ? inner.slice(0, bar) : inner;
+    const alias = bar >= 0 ? inner.slice(bar + 1) : '';
+    const hash = target.indexOf('#');
+    const page = (hash >= 0 ? target.slice(0, hash) : target).trim();
+    const head = hash >= 0 ? target.slice(hash + 1).replace(/^\^/, '').trim() : '';
+    const n = page ? resolve(v, page) : from;
+    const text = esc(alias || (page ? page.split('/').pop() : head));
+    if (!n) return `<span class="wl broken" title="Not in this notebook">${text}</span>`;
+    return `<a class="wl" href="${url.note(v.id, n.path, head ? 'h=' + enc(slug(head)) : '')}">${text}</a>`;
+  }
+
+  const CALLOUTS = {
+    note: ['c-blue', '✏️'], info: ['c-blue', 'ℹ️'], todo: ['c-blue', '☑️'], abstract: ['c-teal', '📋'], summary: ['c-teal', '📋'],
+    tip: ['c-teal', '💡'], hint: ['c-teal', '💡'], important: ['c-teal', '❗'], success: ['c-green', '✅'], check: ['c-green', '✅'],
+    done: ['c-green', '✅'], question: ['c-amber', '❓'], help: ['c-amber', '❓'], faq: ['c-amber', '❓'], warning: ['c-orange', '⚠️'],
+    caution: ['c-orange', '⚠️'], attention: ['c-orange', '⚠️'], failure: ['c-red', '✖️'], danger: ['c-red', '⚡'], error: ['c-red', '⚡'],
+    bug: ['c-red', '🐞'], example: ['c-purple', '🧪'], quote: ['c-gray', '❝'], cite: ['c-gray', '❝'],
+  };
+
+  function enhance(v, n, root, opts) {
+    // headings -> ids
+    const seen = {};
+    $$('h1,h2,h3,h4,h5,h6', root).forEach((h) => {
+      let id = slug(h.textContent) || 'section';
+      if (seen[id]) id += '-' + ++seen[id]; else seen[id] = 1;
+      h.id = id;
+    });
+    // callouts
+    $$('blockquote', root).forEach((bq) => {
+      const p = bq.firstElementChild;
+      if (!p || p.tagName !== 'P') return;
+      const m = /^\[!([\w-]+)\]([+-]?)[ \t]*(.*?)(?:\n|<br\s*\/?>|$)/.exec(p.innerHTML);
+      if (!m) return;
+      const type = m[1].toLowerCase();
+      const [cls, icon] = CALLOUTS[type] || ['c-blue', '📌'];
+      p.innerHTML = p.innerHTML.slice(m[0].length);
+      if (!p.innerHTML.trim()) p.remove();
+      const box = document.createElement('div');
+      box.className = 'callout ' + cls;
+      box.innerHTML = `<div class="callout-title">${icon} ${m[3].trim() || type[0].toUpperCase() + type.slice(1)}</div>`;
+      const body = document.createElement('div');
+      body.className = 'callout-body';
+      while (bq.firstChild) body.appendChild(bq.firstChild);
+      box.appendChild(body);
+      bq.replaceWith(box);
+    });
+    // dataview
+    $$('pre > code', root).forEach((code) => {
+      const lang = (code.className.match(/language-(\S+)/) || [])[1];
+      if (lang !== 'dataview' && lang !== 'dataviewjs') return;
+      const div = document.createElement('div');
+      div.innerHTML = (lang === 'dataview' && runDataview(v, code.textContent)) ||
+        '<div class="dv-note">🔎 This is a live Obsidian list (Dataview), so it only shows up inside Obsidian.</div>';
+      code.parentElement.replaceWith(...div.childNodes);
+    });
+    // tables scroll sideways on phones
+    $$('table', root).forEach((t) => {
+      if (t.parentElement.classList.contains('table-wrap')) return;
+      const w = document.createElement('div');
+      w.className = 'table-wrap';
+      t.replaceWith(w);
+      w.appendChild(t);
+    });
+    // links
+    $$('a[href]', root).forEach((a) => {
+      const h = a.getAttribute('href');
+      if (/^https?:/i.test(h)) { a.target = '_blank'; a.rel = 'noopener'; return; }
+      if (/\.md(#.*)?$/i.test(h)) {
+        const [p, frag] = decodeURI(h).split('#');
+        const t = resolve(v, n.dir && !p.includes('/') ? n.dir + '/' + p : p) || resolve(v, p);
+        if (t) a.href = url.note(v.id, t.path, frag ? 'h=' + enc(slug(frag)) : '');
+      }
+    });
+    // inline code that names a tool file -> open the tool
+    $$('code', root).forEach((c) => {
+      const tid = v.codeLinks && v.codeLinks[c.textContent.trim()];
+      if (!tid || c.closest('pre, a')) return;
+      const a = document.createElement('a');
+      a.className = 'code-link';
+      a.href = url.tool(v.id, tid);
+      c.replaceWith(a);
+      a.appendChild(c);
+    });
+    // (verify) pills
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const hits = [];
+    while (walker.nextNode()) if (walker.currentNode.nodeValue.includes('(verify)')) hits.push(walker.currentNode);
+    hits.forEach((t) => {
+      if (t.parentElement.closest('code, pre')) return;
+      const span = document.createElement('span');
+      span.innerHTML = esc(t.nodeValue).replace(/\(verify\)/g, '<span class="verify" title="Unconfirmed: double-check before going">verify</span>');
+      t.replaceWith(...span.childNodes);
+    });
+    // checkboxes
+    wireTasks(v, n, root, opts.progressHost);
+  }
+
+  function taskKey(li) {
+    const c = li.cloneNode(true);
+    $$('ul, ol', c).forEach((x) => x.remove());
+    return c.textContent.replace(/\s+/g, ' ').trim().slice(0, 180);
+  }
+  function wireTasks(v, n, root, host) {
+    const skey = 'nb:checks:' + v.id + ':' + n.path;
+    const boxes = $$('li > input[type=checkbox], li > p:first-child > input[type=checkbox]', root);
+    if (!boxes.length) return;
+    const saved = store.get(skey, {});
+    const items = boxes.map((cb) => {
+      const li = cb.closest('li');
+      li.classList.add('task');
+      const key = taskKey(li);
+      const orig = cb.checked;
+      cb.disabled = false;
+      if (key in saved) cb.checked = saved[key];
+      li.classList.toggle('done', cb.checked);
+      cb.addEventListener('change', () => {
+        const s = store.get(skey, {});
+        if (cb.checked === orig) delete s[key]; else s[key] = cb.checked;
+        store.set(skey, s);
+        li.classList.toggle('done', cb.checked);
+        update();
+      });
+      return { cb, li, orig, key };
+    });
+    if (boxes.length < 4 || !host) return;
+    const filterKey = 'nb:filter';
+    host.innerHTML = `<div class="progress">
+        <span class="num"></span><div class="bar"><i></i></div>
+        <div class="seg" role="group" aria-label="Show">
+          <button data-f="all">All</button><button data-f="todo">To do</button><button data-f="done">Done</button>
+        </div>
+        <button class="linkish" data-reset hidden>Undo my changes here</button>
+      </div>`;
+    const setFilter = (f) => {
+      root.classList.toggle('filter-todo', f === 'todo');
+      root.classList.toggle('filter-done', f === 'done');
+      $$('.seg button', host).forEach((b) => b.classList.toggle('on', b.dataset.f === f));
+      store.set(filterKey, f);
+    };
+    $$('.seg button', host).forEach((b) => b.addEventListener('click', () => setFilter(b.dataset.f)));
+    setFilter(store.get(filterKey, 'all'));
+    $('[data-reset]', host).addEventListener('click', () => {
+      if (!confirm('Put every checkbox on this page back the way the notebook has it?')) return;
+      store.del(skey);
+      items.forEach((it) => { it.cb.checked = it.orig; it.li.classList.toggle('done', it.orig); });
+      update();
+    });
+    function update() {
+      const done = items.filter((it) => it.cb.checked).length;
+      $('.num', host).textContent = `✓ ${done} of ${items.length}`;
+      $('.bar > i', host).style.width = (100 * done / items.length).toFixed(1) + '%';
+      $('[data-reset]', host).hidden = !Object.keys(store.get(skey, {})).length;
+    }
+    update();
+  }
+
+  // ---------------------------------------------------------------- mini Dataview
+  // Supports the TABLE queries these vaults use: FROM "folder", WHERE with
+  // AND of `x = "y"`, `x != "y"`, `x`, `!x`; SORT field [ASC|DESC]; LIMIT n;
+  // GROUP BY field with length(rows) and length(filter(rows.x, (d) => d)).
+  function splitTop(s) {
+    const out = [];
+    let depth = 0, quote = false, cur = '';
+    for (const ch of s) {
+      if (ch === '"') quote = !quote;
+      if (!quote && ch === '(') depth++;
+      if (!quote && ch === ')') depth--;
+      if (ch === ',' && !depth && !quote) { out.push(cur); cur = ''; } else cur += ch;
+    }
+    if (cur.trim()) out.push(cur);
+    return out.map((x) => x.trim());
+  }
+  const truthy = (x) => x != null && x !== '' && x !== false && !(Array.isArray(x) && !x.length);
+  function field(n, f) {
+    if (f === 'file.name') return n.title;
+    if (f === 'file.path') return n.path + '.md';
+    if (f === 'file.folder') return n.dir;
+    if (f.startsWith('file.')) return undefined;
+    return f in n.fm ? n.fm[f] : n.fm[f.toLowerCase()];
+  }
+  function parseCond(s) {
+    s = s.trim();
+    let m;
+    if ((m = /^!\s*([\w.]+)$/.exec(s))) return (n) => !truthy(field(n, m[1]));
+    if ((m = /^([\w.]+)\s*(!?=)\s*"([^"]*)"$/.exec(s))) {
+      const [, f, op, val] = m;
+      return (n) => {
+        const x = field(n, f);
+        const eq = Array.isArray(x) ? x.map(String).includes(val) : String(x ?? '') === val;
+        return op === '=' ? eq : !eq;
+      };
+    }
+    if ((m = /^([\w.]+)\s*(!?=)\s*(-?\d+(?:\.\d+)?|true|false)$/.exec(s))) {
+      const [, f, op, raw] = m;
+      const val = yval(raw);
+      return (n) => (field(n, f) === val) === (op === '=');
+    }
+    if ((m = /^([\w.]+)$/.exec(s))) return (n) => truthy(field(n, m[1]));
+    return null;
+  }
+  function cmpVals(a, b) {
+    const na = a == null || a === '', nb = b == null || b === '';
+    if (na || nb) return na === nb ? 0 : na ? 1 : -1;
+    if (typeof a === 'number' && typeof b === 'number') return a - b;
+    return natural.compare(String(a), String(b));
+  }
+  function cell(v, x) {
+    if (x == null || x === '') return '<span class="count">—</span>';
+    if (Array.isArray(x)) return x.map((y) => esc(y)).join(', ');
+    return esc(x);
+  }
+  function runDataview(v, q) {
+    try {
+      const lines = q.trim().split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+      const head = /^TABLE(\s+WITHOUT\s+ID)?\s+(.+)$/i.exec(lines[0] || '');
+      if (!head) return null;
+      const withoutId = !!head[1];
+      const cols = splitTop(head[2]).map((c) => {
+        const m = /^(.*?)\s+AS\s+"([^"]*)"$/i.exec(c);
+        return m ? { expr: m[1].trim(), label: m[2] } : { expr: c, label: c };
+      });
+      let from = null, sort = null, limit = null, group = null;
+      const where = [];
+      for (const l of lines.slice(1)) {
+        let m;
+        if ((m = /^FROM\s+"([^"]*)"$/i.exec(l))) from = m[1].replace(/\/$/, '');
+        else if ((m = /^WHERE\s+(.+)$/i.exec(l))) where.push(...m[1].split(/\s+AND\s+/i).map(parseCond));
+        else if ((m = /^SORT\s+([\w.]+)(?:\s+(ASC|DESC))?$/i.exec(l))) sort = { f: m[1], desc: /desc/i.test(m[2] || '') };
+        else if ((m = /^LIMIT\s+(\d+)$/i.exec(l))) limit = +m[1];
+        else if ((m = /^GROUP\s+BY\s+([\w.]+)$/i.exec(l))) group = m[1];
+        else return null;
+      }
+      if (where.some((c) => !c)) return null;
+      let rows = v.notes.filter((n) => !from || n.path === from || n.path.startsWith(from + '/'));
+      rows = rows.filter((n) => where.every((c) => c(n)));
+      let headers, body;
+      if (group) {
+        const groups = new Map();
+        for (const n of rows) {
+          const k = field(n, group);
+          const kk = k == null ? '—' : String(k);
+          if (!groups.has(kk)) groups.set(kk, []);
+          groups.get(kk).push(n);
+        }
+        let gs = [...groups].map(([key, rs]) => ({ key, rows: rs }));
+        if (sort) {
+          gs.sort((a, b) => cmpVals(a.key, b.key));
+          if (sort.desc) gs.reverse();
+        }
+        if (limit != null) gs = gs.slice(0, limit);
+        const gexpr = (expr, g) => {
+          let m;
+          if (expr === 'key') return esc(g.key);
+          if (expr === 'length(rows)') return String(g.rows.length);
+          if ((m = /^length\(filter\(rows\.([\w.]+),\s*\((\w+)\)\s*=>\s*\2\s*\)\)$/.exec(expr))) return String(g.rows.filter((n) => truthy(field(n, m[1]))).length);
+          throw new Error('unsupported');
+        };
+        headers = (withoutId ? [] : [esc(group)]).concat(cols.map((c) => esc(c.label)));
+        body = gs.map((g) => (withoutId ? [] : [esc(g.key)]).concat(cols.map((c) => gexpr(c.expr, g))));
+        if (withoutId && !cols.some((c) => c.expr === 'key')) { headers.unshift(esc(group)); body.forEach((r, i) => r.unshift(esc(gs[i].key))); }
+      } else {
+        if (sort) {
+          rows.sort((a, b) => cmpVals(field(a, sort.f), field(b, sort.f)));
+          if (sort.desc) rows.reverse();
+        }
+        if (limit != null) rows = rows.slice(0, limit);
+        const link = (n) => `<a class="wl" href="${url.note(v.id, n.path)}">${esc(n.title)}</a>`;
+        const rexpr = (expr, n) => {
+          if (expr === 'file.link') return link(n);
+          if (!/^[\w.]+$/.test(expr)) throw new Error('unsupported');
+          return cell(v, field(n, expr));
+        };
+        headers = (withoutId ? [] : ['File']).concat(cols.map((c) => esc(c.label)));
+        body = rows.map((n) => (withoutId ? [] : [link(n)]).concat(cols.map((c) => rexpr(c.expr, n))));
+      }
+      if (!body.length) return '<div class="dv-note">Nothing here right now.</div>';
+      return `<div class="table-wrap"><table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${
+        body.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------- views
+  const main = () => $('#main');
+  function fmtDate(iso) {
+    const d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function renderHub() {
+    setProject(null, null);
+    document.title = 'Notebooks';
+    const cards = PROJECTS.map((p) => `
+      <a class="proj-card" href="${url.project(p.id)}" style="--pa:${esc(p.accent)};--pad:${esc(p.accentDark)}">
+        <div class="pe">${p.emoji}</div>
+        <h2>${esc(p.title)}</h2>
+        <p>${esc(p.tagline)}</p>
+        <span class="go">Open →</span>
+      </a>`).join('');
+    main().innerHTML = `<section class="hub">
+        <h1>Our notebooks</h1>
+        <p>Pick one to browse. Check off items as you go; checkmarks are saved on this device.</p>
+        <div class="proj-cards">${cards || '<p>No notebooks published yet.</p>'}</div>
+        <div class="hub-foot">
+          <button class="btn ghost" id="hubLock">🔒 Lock this device</button>
+          <span>Updated ${PROJECTS.map((p) => esc(p.title) + ' ' + fmtDate(p.built)).join(' · ')}</span>
+        </div>
+      </section>`;
+    $('#hubLock').addEventListener('click', lockNow);
+    window.scrollTo(0, 0);
+  }
+
+  function renderNote(v, n, params, isHome) {
+    const pid = v.id;
+    if (!n) {
+      main().innerHTML = `<div class="page"><h1>Not found</h1><p>That note isn't in this notebook. <a href="${url.project(pid)}">Go home</a></p></div>`;
+      return;
+    }
+    const crumbs = n.dir ? n.dir.split('/').map((s) => `<span>${esc(prettyDir(s))}</span>`).join('<span>›</span>') : '';
+    const tags = [].concat(n.fm.tags || []).filter(Boolean);
+    const props = isHome ? [] : Object.entries(n.fm).filter(([k, x]) => !['tags', 'updated', 'type'].includes(k) && truthy(x));
+    const tools = isHome && v.tools && v.tools.length ? `<div class="tool-cards">${v.tools.map((t) => `
+        <a class="tool-card" href="${url.tool(pid, t.id)}"><span class="ti">${t.icon}</span><b>${esc(t.title)}</b><span>${esc(t.blurb || '')}</span></a>`).join('')}</div>` : '';
+    main().innerHTML = `<article class="page">
+        ${crumbs ? `<div class="crumbs">${crumbs}</div>` : ''}
+        <header class="note-head"></header>
+        <div class="meta">${n.fm.updated ? `<span>Updated ${esc(n.fm.updated)}</span>` : ''}${tags.map((t) => `<span class="chip">#${esc(t)}</span>`).join('')}</div>
+        ${props.length ? `<details class="props"><summary>Properties</summary><dl>${props.map(([k, x]) => `<dt>${esc(k)}</dt><dd>${cell(v, x)}</dd>`).join('')}</dl></details>` : ''}
+        ${tools}
+        <div class="progress-host"></div>
+        <div class="md">${renderMarkdown(v, n)}</div>
+        <div class="foot">${esc(cur.proj.title)} · published ${fmtDate(v.built)} · read-only copy; checkmarks save on this device</div>
+      </article>`;
+    const md = $('.md', main());
+    const first = md.firstElementChild;
+    const head = $('.note-head', main());
+    if (first && first.tagName === 'H1') head.appendChild(first);
+    else head.innerHTML = `<h1>${esc(n.title)}</h1>`;
+    if (!$('.meta', main()).children.length) $('.meta', main()).remove();
+    enhance(v, n, md, { progressHost: $('.progress-host', main()) });
+    document.title = (isHome ? v.title : n.title + ' · ' + v.title);
+    markActive(isHome ? `[data-path="${CSS.escape(v.homeNote.path)}"]` : `[data-path="${CSS.escape(n.path)}"]`);
+
+    const hl = params.get('hl');
+    const h = params.get('h');
+    let target = h ? document.getElementById(h) : null;
+    if (hl) target = highlight(md, hl) || target;
+    if (target) requestAnimationFrame(() => target.scrollIntoView({ block: h && !hl ? 'start' : 'center' }));
+    else window.scrollTo(0, 0);
+  }
+
+  function highlight(root, q) {
+    const terms = q.toLowerCase().split(/\s+/).filter((t) => t.length > 1);
+    if (!terms.length) return null;
+    const re = new RegExp('(' + terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) if (re.test(walker.currentNode.nodeValue)) nodes.push(walker.currentNode);
+    let first = null;
+    nodes.forEach((t) => {
+      const span = document.createElement('span');
+      span.innerHTML = esc(t.nodeValue).replace(re, '<mark>$1</mark>');
+      const marks = $$('mark', span);
+      if (!first && marks.length) first = marks[0];
+      t.replaceWith(...span.childNodes);
+    });
+    return first;
+  }
+
+  function renderTool(v, id) {
+    const t = (v.tools || []).find((x) => x.id === id);
+    if (!t) return renderNote(v, null);
+    document.title = t.title + ' · ' + v.title;
+    markActive(`[data-tool="${CSS.escape(id)}"]`);
+    if (t.ics) {
+      const webcal = t.ics.replace(/^https?:/, 'webcal:');
+      main().innerHTML = `<article class="page">
+          <div class="note-head"><h1>${t.icon} ${esc(t.title)}</h1></div>
+          <div class="md">
+            <p>Every event the calendar finder picks up, refreshed weekly. Subscribe once and it stays up to date on your phone.</p>
+            <div class="btn-row">
+              <a class="btn" href="https://calendar.google.com/calendar/r?cid=${enc(webcal)}" target="_blank" rel="noopener">Add to Google Calendar</a>
+              <a class="btn ghost" href="${esc(webcal)}">iPhone / Apple Calendar</a>
+            </div>
+            <p>Or copy the link and add it by URL (Google Calendar → Other calendars → + → From URL):</p>
+            <div class="copy-row"><input readonly value="${esc(t.ics)}" aria-label="Calendar link"><button class="btn ghost" id="copyIcs">Copy</button></div>
+            ${v.byTitle.get('upcoming') ? `<p>Prefer a list? See ${wikilink(v, v.homeNote, 'Upcoming')}.</p>` : ''}
+          </div></article>`;
+      $('#copyIcs').addEventListener('click', async () => {
+        const inp = $('.copy-row input');
+        try { await navigator.clipboard.writeText(inp.value); } catch (e) { inp.select(); document.execCommand('copy'); }
+        $('#copyIcs').textContent = 'Copied ✓';
+      });
+      window.scrollTo(0, 0);
+      return;
+    }
+    main().innerHTML = `<div class="tool-frame">
+        <div class="tool-bar"><span>${t.icon}</span><b>${esc(t.title)}</b></div>
+        <iframe title="${esc(t.title)}"></iframe></div>`;
+    $('iframe', main()).srcdoc = t.html;
+  }
+
+  function renderSearch(v, q) {
+    const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+    document.title = 'Search · ' + v.title;
+    markActive(null);
+    if ($('#q').value !== q && document.activeElement !== $('#q')) $('#q').value = q;
+    if (!terms.length) {
+      main().innerHTML = '<div class="page"><h1>Search</h1><p class="count">Type in the search box above.</p></div>';
+      return;
+    }
+    const clean = (s) => s.replace(/\[\[([^\]|]+)\|?([^\]]*)\]\]/g, (m, a, b) => b || a).replace(/[*_`#>]|^\s*-\s*\[.\]\s*|^\s*[-+]\s+/g, '').trim();
+    const re = new RegExp('(' + terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+    const results = [];
+    for (const n of v.notes) {
+      const hay = (n.title + '\n' + n.body).toLowerCase();
+      if (!terms.every((t) => hay.includes(t))) continue;
+      const tl = n.title.toLowerCase();
+      let score = terms.reduce((a, t) => a + (tl.includes(t) ? 50 : 0) + Math.min(hay.split(t).length - 1, 20), 0);
+      const lines = n.body.split('\n').filter((l) => terms.some((t) => l.toLowerCase().includes(t)) && clean(l) && clean(l) !== n.title).slice(0, 3);
+      results.push({ n, score, lines });
+    }
+    results.sort((a, b) => b.score - a.score);
+    main().innerHTML = `<div class="page">
+        <div class="note-head"><h1>“${esc(q)}”</h1></div>
+        <p class="count">${results.length} note${results.length === 1 ? '' : 's'}</p>
+        <ul class="results">${results.map((r) => `<li>
+          <a class="rt" href="${url.note(v.id, r.n.path, 'hl=' + enc(q))}">${esc(r.n.title)}</a>
+          ${r.n.dir ? `<div class="rp">${esc(r.n.dir.split('/').map(prettyDir).join(' › '))}</div>` : ''}
+          ${r.lines.map((l) => `<div class="rs">${esc(clean(l).slice(0, 220)).replace(re, '<mark>$1</mark>')}</div>`).join('')}
+        </li>`).join('')}</ul></div>`;
+    window.scrollTo(0, 0);
+  }
+
+  let searchTimer = null;
+  $('#q').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      if (!cur) return;
+      const q = $('#q').value.trim();
+      const target = q ? url.search(cur.v.id, q) : url.project(cur.v.id);
+      if (parseRoute().kind === 's') location.replace(target); else location.hash = target;
+    }, 220);
+  });
+  $('#searchForm').addEventListener('submit', (e) => { e.preventDefault(); $('#q').blur(); });
+
+  // Tool pages (inside the iframe) can ask to open a note: postMessage({ openNote: "Title" }).
+  window.addEventListener('message', (e) => {
+    if (!cur || !e.data || typeof e.data.openNote !== 'string') return;
+    const f = $('#main iframe');
+    if (!f || e.source !== f.contentWindow) return;
+    const n = resolve(cur.v, e.data.openNote);
+    if (n) location.hash = url.note(cur.v.id, n.path);
+  });
+
+  // ---------------------------------------------------------------- router
+  async function route() {
+    closeNav();
+    const r = parseRoute();
+    const proj = PROJECTS.find((p) => p.id === r.pid);
+    if (!proj) return renderHub();
+    let v = VAULTS[proj.id];
+    if (!v) {
+      setProject(proj, null);
+      main().innerHTML = '<div class="loading"><div class="spinner"></div>Opening ' + esc(proj.title) + '…</div>';
+      try {
+        v = await loadVault(proj.id);
+      } catch (err) {
+        if (err && err.name === 'OperationError') { store.del('nb:key'); return showLock('The passphrase has changed. Please enter it again.'); }
+        main().innerHTML = `<div class="page"><h1>Couldn't open ${esc(proj.title)}</h1><p>${esc(err.message || err)}</p><p><a href="${location.hash}" onclick="location.reload()">Try again</a></p></div>`;
+        return;
+      }
+      if (parseRoute().pid !== proj.id) return; // navigated away meanwhile
+    }
+    setProject(proj, v);
+    main().classList.toggle('full', r.kind === 't');
+    if (r.kind !== 's' && document.activeElement !== $('#q')) $('#q').value = '';
+    if (r.kind === 'n') renderNote(v, resolve(v, r.rest), r.params, false);
+    else if (r.kind === 't') renderTool(v, r.rest);
+    else if (r.kind === 's') renderSearch(v, r.params.get('q') || '');
+    else renderNote(v, v.homeNote, r.params, true);
+  }
+
+  function start() {
+    $('#lock').hidden = true;
+    $('#app').hidden = false;
+    window.addEventListener('hashchange', route);
+    route();
+  }
+
+  async function boot() {
+    applyTheme();
+    if (!window.crypto || !crypto.subtle || !window.DecompressionStream) {
+      return showLock('This browser is too old to open the notebooks. Try an up-to-date Safari, Chrome or Firefox.');
+    }
+    try {
+      PROJECTS = await (await fetch('projects.json', { cache: 'no-cache' })).json();
+    } catch (e) {
+      PROJECTS = [];
+    }
+    const saved = store.get('nb:key');
+    if (saved) {
+      try {
+        KEY = await crypto.subtle.importKey('raw', b64dec(saved), 'AES-GCM', true, ['decrypt']);
+        await verifyKey(KEY);
+        return start();
+      } catch (err) {
+        if (err && err.name === 'OperationError') { store.del('nb:key'); KEY = null; }
+        else if (KEY) return start(); // offline or a hiccup: keep the key, let the page show the error
+      }
+    }
+    showLock();
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
