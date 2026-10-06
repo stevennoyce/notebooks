@@ -538,7 +538,7 @@ body::after {
     hub: () => '#/',
     project: (pid) => '#/' + enc(pid),
     note: (pid, p, extra) => '#/' + enc(pid) + '/n/' + path2url(p) + (extra ? '?' + extra : ''),
-    tool: (pid, id) => '#/' + enc(pid) + '/t/' + enc(id),
+    tool: (pid, id, extra) => '#/' + enc(pid) + '/t/' + enc(id) + (extra ? '?' + extra : ''),
     search: (pid, q) => '#/' + enc(pid) + '/s?q=' + enc(q),
   };
   function parseRoute() {
@@ -1060,12 +1060,18 @@ body::after {
     const props = isHome ? [] : Object.entries(n.fm).filter(([k, x]) => !['tags', 'updated', 'type'].includes(k) && truthy(x));
     const tools = isHome && v.tools && v.tools.length ? `<div class="tool-cards">${v.tools.map((t) => `
         <a class="tool-card" href="${url.tool(pid, t.id)}"><span class="ti">${t.icon}</span><b>${esc(t.title)}</b><span>${esc(t.blurb || '')}</span></a>`).join('')}</div>` : '';
+    // site.json noteButtons: [{ folder, exclude?, tool, param, label }] puts a button on matching notes
+    // that opens the tool with ?<param>=<note title>; the tool reads it from window.NB_PARAMS.
+    const noteBtns = isHome ? [] : (v.noteButtons || []).filter((b) => (n.dir === b.folder || (n.dir || '').startsWith(b.folder + '/'))
+      && !(b.exclude || []).includes(n.title) && (v.tools || []).some((t) => t.id === b.tool));
+    const btns = noteBtns.length ? `<div class="btn-row note-btns">${noteBtns.map((b) =>
+      `<a class="btn" href="${url.tool(pid, b.tool, enc(b.param) + '=' + enc(n.title))}">${esc(b.label)}</a>`).join('')}</div>` : '';
     main().innerHTML = `<article class="page">
         ${crumbs ? `<div class="crumbs">${crumbs}</div>` : ''}
         <header class="note-head"></header>
         <div class="meta">${n.fm.updated ? `<span>Updated ${esc(n.fm.updated)}</span>` : ''}${tags.map((t) => `<span class="chip">#${esc(t)}</span>`).join('')}</div>
         ${props.length ? `<details class="props"><summary>Properties</summary><dl>${props.map(([k, x]) => `<dt>${esc(k)}</dt><dd>${cell(v, x)}</dd>`).join('')}</dl></details>` : ''}
-        ${tools}
+        ${tools}${btns}
         <div class="progress-host"></div>
         <div class="md">${renderMarkdown(v, n)}</div>
         <div class="foot">${esc(cur.proj.title)} · published ${fmtDate(v.built)} · read-only copy; checkmarks save on this device</div>
@@ -1107,7 +1113,7 @@ body::after {
     return first;
   }
 
-  function renderTool(v, id) {
+  function renderTool(v, id, params) {
     const t = (v.tools || []).find((x) => x.id === id);
     if (!t) return renderNote(v, null);
     document.title = t.title + ' · ' + v.title;
@@ -1137,7 +1143,9 @@ body::after {
     main().innerHTML = `<div class="tool-frame">
         <div class="tool-bar"><span>${t.icon}</span><b>${esc(t.title)}</b></div>
         <iframe title="${esc(t.title)}"></iframe></div>`;
-    $('iframe', main()).srcdoc = t.html.replace(/<html\b[^>]*>/i, (m) => m.replace(/\sdata-theme="[^"]*"/, '').replace(/>$/, ` data-theme="${theme()}">`));
+    const nbParams = JSON.stringify(Object.fromEntries(params || [])).replace(/</g, '\\u003c');
+    $('iframe', main()).srcdoc = t.html.replace(/<html\b[^>]*>/i, (m) => m.replace(/\sdata-theme="[^"]*"/, '').replace(/>$/, ` data-theme="${theme()}">`))
+      .replace(/<head\b[^>]*>/i, (m) => `${m}<script>window.NB_PARAMS=${nbParams};<\/script>`);
   }
 
   function renderSearch(v, q) {
@@ -1216,7 +1224,7 @@ body::after {
     main().classList.toggle('full', r.kind === 't');
     if (r.kind !== 's' && document.activeElement !== $('#q')) $('#q').value = '';
     if (r.kind === 'n') renderNote(v, resolve(v, r.rest), r.params, false);
-    else if (r.kind === 't') renderTool(v, r.rest);
+    else if (r.kind === 't') renderTool(v, r.rest, r.params);
     else if (r.kind === 's') renderSearch(v, r.params.get('q') || '');
     else renderNote(v, v.homeNote, r.params, true);
   }

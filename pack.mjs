@@ -98,6 +98,7 @@ const bundle = {
   folderOrder: cfg.folderOrder || [],
   folderIcons: cfg.folderIcons || {},
   codeLinks: cfg.codeLinks || {},
+  noteButtons: cfg.noteButtons || [],
   built,
   notes,
   tools,
