@@ -7,7 +7,45 @@
   "background_color": "#faf6f2",
   "theme_color": "#c0395f",
   "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
-    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Weather",
+      "short_name": "Weather",
+      "description": "Weather & Enthalpy",
+      "url": "./#/house/t/weather",
+      "icons": [
+        {
+          "src": "shortcut-weather.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any"
+        }
+      ]
+    },
+    {
+      "name": "Date Night",
+      "short_name": "Date Night",
+      "description": "The date night notebook",
+      "url": "./#/dates",
+      "icons": [
+        {
+          "src": "shortcut-date.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any"
+        }
+      ]
+    }
   ]
 }
