@@ -246,6 +246,17 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1
 .c-blue { --c: #3b7bd6; } .c-teal { --c: #1f9a8a; } .c-green { --c: #3f9a4a; } .c-amber { --c: #c98a12; }
 .c-orange { --c: #d9731f; } .c-red { --c: #d24545; } .c-purple { --c: #8a55c9; } .c-gray { --c: #8a8480; }
 
+/* past events: hidden unless .show-past (toggled by the bar above the note) */
+.md:not(.show-past) .past-ev { display: none !important; }
+.md.show-past li.past-ev, .md.show-past tr.past-ev { opacity: .55; }
+.past-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; width: fit-content; max-width: 100%;
+  margin: 0 0 18px; padding: 5px 13px; border-radius: 999px; font-size: 13px; color: var(--muted);
+  border: 1px solid var(--border);
+}
+.past-bar button { border: 0; background: none; padding: 0; font-size: inherit; font-weight: 600; color: var(--accent); cursor: pointer; text-underline-offset: 2px; }
+.past-bar button:hover { text-decoration: underline; }
+
 .dv-note { color: var(--muted); font-size: 14px; background: var(--surface); border: 1px dashed var(--border); border-radius: 10px; padding: 10px 14px; margin: 12px 0; }
 
 /* cards */
@@ -320,7 +331,7 @@ body::after {
 @keyframes drift2 { to { transform: translate(-16vw, -12vh) scale(1.1); } }
 .lock, .shell, .main { background: transparent; }
 .lock { background: transparent; }
-.lock-card, .tool-card, .proj-card, .progress, .results li, .table-wrap, .props dl, .md blockquote, .dv-note {
+.lock-card, .tool-card, .proj-card, .progress, .results li, .table-wrap, .props dl, .md blockquote, .dv-note, .past-bar {
   background-color: var(--glass);
   backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
 }
@@ -1073,6 +1084,7 @@ body::after {
         ${props.length ? `<details class="props"><summary>Properties</summary><dl>${props.map(([k, x]) => `<dt>${esc(k)}</dt><dd>${cell(v, x)}</dd>`).join('')}</dl></details>` : ''}
         ${tools}${btns}
         <div class="progress-host"></div>
+        <div class="past-host"></div>
         <div class="md">${renderMarkdown(v, n)}</div>
         <div class="foot">${esc(cur.proj.title)} · published ${fmtDate(v.built)} · read-only copy; checkmarks save on this device</div>
       </article>`;
@@ -1084,6 +1096,7 @@ body::after {
     gradTitle($('h1', head));
     if (!$('.meta', main()).children.length) $('.meta', main()).remove();
     enhance(v, n, md, { progressHost: $('.progress-host', main()) });
+    const past = hidePast(n, md, $('.past-host', main()));
     document.title = (isHome ? v.title : n.title + ' · ' + v.title);
     markActive(isHome ? `[data-path="${CSS.escape(v.homeNote.path)}"]` : `[data-path="${CSS.escape(n.path)}"]`);
 
@@ -1091,8 +1104,137 @@ body::after {
     const h = params.get('h');
     let target = h ? document.getElementById(h) : null;
     if (hl) target = highlight(md, hl) || target;
+    // A jump or search hit inside a hidden past item shows past events for this view only.
+    if (past && target && target.closest('.past-ev')) past.show(true, false);
     if (target) requestAnimationFrame(() => target.scrollIntoView({ block: h && !hl ? 'start' : 'center' }));
     else window.scrollTo(0, 0);
+  }
+
+  // ---------------------------------------------------------------- past events
+  // Hides list items and table rows whose events have all ended (latest end date < today),
+  // plus headings, tables and callouts left empty by that. Recurring items, undated items
+  // and dates in "(verified …)"-style asides never count. Log/ and Plans/ are history: skipped.
+  const MONTHS = 'Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?';
+  const PDAY = '(?:\\d{1,2})(?:st|nd|rd|th)?(?!\\d|:\\d|\\s?[ap]\\.?m\\b)';
+  const PSPAN = PDAY + '(?:\\s*(?:-|–|—|to|through|thru)\\s*' + PDAY + ')?';
+  const DATE_RE = new RegExp(
+    '\\b(?:(' + MONTHS + ')\\.?\\s+(?:(20\\d{2})\\b|(' + PSPAN + '(?:\\s*(?:,\\s*and|,|&|and)\\s*' + PSPAN + ')*)(?:(?:,\\s*|\\s+)(20\\d{2})\\b)?)' +
+    '|(20\\d{2})-(\\d{2})-(\\d{2})\\b)', 'g');
+  const ASIDE_RE = /\((?:verified|researched|checked|as of|updated|added|last)\b[^()]*\)|\(\s*20\d{2}-\d{2}-\d{2}\s*\)/gi; // also a bare "(2026-09-27)" stamp
+  const ASIDE_BEFORE = /\b(?:verified|confirmed|researched|checked|as of|updated|added|asked|requested|learned|noted|logged|decided|last|previous(?:ly)?|prior|earlier|est|established|founded|since|on sale|sales?|registration|deadline|availab\w*|release[sd]?|premiered|aired)\b(?:[\s.:,]+[\w']+){0,2}?[\s.:,]*(?:on\s+)?$/i;
+  // A date after one of these is a start with no known end ("from Oct 1"): unsure, so it can't hide.
+  const OPEN_BEFORE = /\b(?:from|starting|starts|started|begins|beginning|began|opens|opened|reopens|after)[\s:,]*(?:on\s+)?$/i;
+  // Items that say the real dates aren't known yet stay put even if they mention an old date.
+  const PENDING_RE = /\b(?:no dates? yet|dates? (?:are |is )?(?:not (?:yet )?(?:posted|announced|set|listed)|TBA|TBD)|season (?:is |listed as )?(?:not (?:yet )?(?:posted|announced|confirmed)|TBA|TBD)|year (?:unverified|unknown|unconfirmed)|calendar)\b/i; // "calendar": a source listing that cites example dates
+  const RECUR_RE = /\b(?:every|each|weekly|monthly|quarterly|annually|yearly|nightly|daily|biweekly|bi-?annual(?:ly)?|semi-?annual(?:ly)?|recurring|weeknights|weekends|year-round|ongoing|(?:mon|tues|wednes|thurs|fri|satur|sun)days|(?:1st|2nd|3rd|4th|5th|first|second|third|fourth|fifth|last) (?:mon|tue|wed|thu|fri|sat|sun)\w*)\b/i;
+  const LEAD_DATE = new RegExp('^[^A-Za-z0-9]*(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\\w*\\.?,?\\s+)?(?:(?:' + MONTHS + ')\\.?\\s+\\d|20\\d{2}-\\d{2}-\\d{2})');
+  const monthIdx = (s) => ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(s.slice(0, 3).toLowerCase());
+  const ymd = (y, m, d) => y * 10000 + (m + 1) * 100 + d;
+
+  // Latest end date in the text as yyyymmdd, or null if there's none (or it can't be pinned down).
+  function latestEnd(text, updated) {
+    text = text.replace(/https?:\/\/\S+/g, ' ').replace(ASIDE_RE, ' ');
+    const toks = [];
+    let skipEnd = -1; // end of an ignored date, so its range tail ("on sale Aug 17-Oct 11") is ignored too
+    DATE_RE.lastIndex = 0;
+    for (let m; (m = DATE_RE.exec(text));) {
+      const tail = skipEnd >= 0 && /^\s*(?:-|–|—|to|through|thru)\s*$/.test(text.slice(skipEnd, m.index));
+      if (tail || ASIDE_BEFORE.test(text.slice(Math.max(0, m.index - 30), m.index))) { skipEnd = m.index + m[0].length; continue; }
+      skipEnd = -1;
+      const open = OPEN_BEFORE.test(text.slice(Math.max(0, m.index - 20), m.index));
+      if (m[5]) { toks.push({ y: +m[5], m: +m[6] - 1, d: +m[7], open }); continue; }
+      const mo = monthIdx(m[1]);
+      // Month + year only ("Sept 2027"): counts to the end of that month, but can't hide an item alone.
+      if (m[2]) { toks.push({ y: +m[2], m: mo, d: new Date(+m[2], mo + 1, 0).getDate(), vague: true }); continue; }
+      const days = (m[3].match(/\d{1,2}/g) || []).map(Number).filter((x) => x >= 1 && x <= 31);
+      if (!days.length) continue;
+      toks.push({ y: m[4] ? +m[4] : null, m: mo, d: Math.max(...days), open, ord: /\d(?:st|nd|rd|th)\b/.test(m[3]) });
+    }
+    if (!toks.length || toks.every((t) => t.vague)) return null;
+    const bare = Math.max(0, ...(text.match(/\b20\d{2}\b/g) || []).map(Number));
+    let best = 0, bestOpen = false;
+    for (let i = 0; i < toks.length; i++) {
+      const t = toks[i];
+      if (t.y == null) {
+        const later = toks.slice(i + 1).find((x) => x.y != null);
+        if (later) t.y = t.m > later.m ? later.y - 1 : later.y;
+        else if (t.ord) continue; // "July 4th" with no year reads as a holiday name, not an event date
+        else if (updated) {
+          t.y = updated.getFullYear();
+          if (new Date(t.y, t.m, t.d) < new Date(updated.getTime() - 150 * 864e5)) t.y++;
+          // A yearless date that would fall before the note was written, in an item naming a later
+          // year ("verify exact 2027 event details"), means that year.
+          if (bare > t.y && new Date(t.y, t.m, t.d) < updated) t.y = bare;
+        } else return null; // unsure: don't hide
+      }
+      const v = ymd(t.y, t.m, t.d);
+      if (v > best) { best = v; bestOpen = !!t.open; } else if (v === best && !t.open) bestOpen = false;
+    }
+    return best && !bestOpen ? best : null;
+  }
+
+  function hidePast(n, md, host) {
+    if (/^(Log|Plans|About Us)\//i.test(n.path)) return null; // history and profile notes keep every dated line
+    const um = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(n.fm.updated || ''));
+    const updated = um ? new Date(+um[1], +um[2] - 1, +um[3]) : null;
+    const now = new Date();
+    const today = ymd(now.getFullYear(), now.getMonth(), now.getDate());
+    const isPast = (text) => {
+      text = text.replace(/https?:\/\/\S+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (RECUR_RE.test(text) && !LEAD_DATE.test(text)) return false;
+      if (PENDING_RE.test(text)) return false;
+      const end = latestEnd(text, updated);
+      return end != null && end < today;
+    };
+    let count = 0;
+    // Deepest first, so a parent with a still-upcoming sublist stays.
+    $$('li', md).reverse().forEach((li) => {
+      if (li.closest('pre')) return;
+      if ($$(':scope > ul > li, :scope > ol > li', li).some((c) => !c.classList.contains('past-ev'))) return;
+      const c = li.cloneNode(true);
+      $$('ul, ol', c).forEach((x) => x.remove());
+      if (isPast(c.textContent)) { li.classList.add('past-ev'); count++; }
+    });
+    $$('tbody tr', md).forEach((tr) => {
+      if (isPast($$('td, th', tr).map((x) => x.textContent).join(' | '))) { tr.classList.add('past-ev'); count++; }
+    });
+    if (!count) return null;
+
+    const visible = (el) => {
+      if (el.classList.contains('past-ev')) return false;
+      if (/^H[1-6]$/.test(el.tagName)) return true;
+      if (el.tagName === 'UL' || el.tagName === 'OL') return $$(':scope > li', el).some((li) => !li.classList.contains('past-ev'));
+      if (el.matches('.table-wrap, table')) { const rows = $$('tbody tr', el); return !rows.length || rows.some((r) => !r.classList.contains('past-ev')); }
+      if (el.tagName === 'HR') return false;
+      if (el.classList.contains('callout')) return [...$('.callout-body', el).children].some(visible);
+      return !!el.textContent.trim() || !!$('img, iframe, video', el);
+    };
+    // Tables and callouts left with nothing visible.
+    $$('.table-wrap', md).forEach((w) => { if ($('tbody tr.past-ev', w) && !visible(w)) w.classList.add('past-ev'); });
+    $$('.callout', md).forEach((c) => { if ($('.past-ev', c) && !visible(c)) c.classList.add('past-ev'); });
+    // Headings whose section is now empty, deepest level first.
+    for (let lvl = 6; lvl >= 2; lvl--) {
+      $$(':scope > h' + lvl, md).forEach((h) => {
+        const sec = [];
+        for (let s = h.nextElementSibling; s && !(/^H[1-6]$/.test(s.tagName) && +s.tagName[1] <= lvl); s = s.nextElementSibling) sec.push(s);
+        const hadPast = sec.some((s) => s.classList.contains('past-ev') || $('.past-ev', s));
+        if (hadPast && !sec.some(visible)) h.classList.add('past-ev');
+      });
+    }
+
+    host.innerHTML = `<div class="past-bar" role="status"><span>🕰️ <span data-past-label></span></span><span aria-hidden="true">·</span><button type="button" data-past-toggle></button></div>`;
+    const label = $('[data-past-label]', host), btn = $('[data-past-toggle]', host);
+    const noun = count === 1 ? 'past event' : 'past events';
+    const show = (on, persist) => {
+      md.classList.toggle('show-past', on);
+      label.textContent = `${count} ${noun} ${on ? 'shown' : 'hidden'}`;
+      btn.textContent = on ? 'Hide past events' : 'Show them';
+      btn.setAttribute('aria-pressed', String(on));
+      if (persist) store.set('nb:showPast', on);
+    };
+    btn.addEventListener('click', () => show(!md.classList.contains('show-past'), true));
+    show(!!store.get('nb:showPast', false), false);
+    return { count, show };
   }
 
   function highlight(root, q) {
@@ -1192,13 +1334,15 @@ body::after {
   });
   $('#searchForm').addEventListener('submit', (e) => { e.preventDefault(); $('#q').blur(); });
 
-  // Tool pages (inside the iframe) can ask to open a note: postMessage({ openNote: "Title" }).
+  // Tool pages (inside the iframe) can ask to open a note: postMessage({ openNote: "Title" }),
+  // optionally at a heading: postMessage({ openNote: "Title", heading: "Heading text or id" }).
   window.addEventListener('message', (e) => {
     if (!cur || !e.data || typeof e.data.openNote !== 'string') return;
     const f = $('#main iframe');
     if (!f || e.source !== f.contentWindow) return;
     const n = resolve(cur.v, e.data.openNote);
-    if (n) location.hash = url.note(cur.v.id, n.path);
+    const hid = typeof e.data.heading === 'string' ? slug(e.data.heading) : '';
+    if (n) location.hash = url.note(cur.v.id, n.path, hid ? 'h=' + enc(hid) : '');
   });
 
   // ---------------------------------------------------------------- router
