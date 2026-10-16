@@ -126,7 +126,7 @@ button { font: inherit; color: inherit; }
   .search input::placeholder { color: transparent; }
   .search input:focus, .search input:not(:placeholder-shown) { width: 100%; cursor: text; padding-right: 10px; }
   .search input:focus::placeholder { color: var(--muted); }
-  .search:focus-within ~ #themeBtn, .topbar:has(.search:focus-within) #brandText { display: none; }
+  .search:focus-within ~ #themeBtn, .search:focus-within ~ #hubBtn, .topbar:has(.search:focus-within) #brandText { display: none; }
 }
 
 /* ---------- shell ---------- */
@@ -139,7 +139,8 @@ button { font: inherit; color: inherit; }
 }
 .main { flex: 1; min-width: 0; }
 .scrim { display: none; }
-body.hub-view .sidebar, body.hub-view #menuBtn, body.hub-view .search { display: none; }
+body.hub-view .sidebar, body.hub-view #menuBtn, body.hub-view .search, body.hub-view #hubBtn { display: none; }
+a.icon-btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 @media (max-width: 959px) {
   .sidebar {
     position: fixed; z-index: 40; left: 0; top: 0; height: 100dvh; width: min(86vw, 320px);
@@ -444,6 +445,7 @@ body::after {
     <a id="brand" class="brand" href="#/"><span id="brandEmoji">📚</span><span id="brandText">Notebooks</span></a>
     <form id="searchForm" class="search" role="search"><input id="q" type="search" placeholder="Search" aria-label="Search this notebook" enterkeyhint="search"></form>
     <button id="themeBtn" class="icon-btn" aria-label="Change theme" title="Theme">◐</button>
+    <a id="hubBtn" class="icon-btn" href="#/" aria-label="All notebooks" title="All notebooks">📚</a>
   </header>
   <div class="shell">
     <nav id="sidebar" class="sidebar" aria-label="Notebook"></nav>
@@ -697,13 +699,13 @@ body::after {
       `<a class="nav-link" data-tool="${esc(t.id)}" href="${url.tool(pid, t.id)}"><span class="ico">${t.icon}</span>${esc(t.title)}</a>`).join('');
     return `
       <div class="nav-section">
+        <a class="nav-link" href="#/"><span class="ico">📚</span>All notebooks</a>
         <a class="nav-link" data-path="${esc(v.homeNote.path)}" href="${url.project(pid)}"><span class="ico">🏠</span>${esc(v.homeNote.title === 'Home' ? 'Home' : v.homeNote.title)}</a>
         ${notesHTML(tree.notes)}
       </div>
       ${tools ? `<div class="nav-section"><div class="nav-label">Tools</div>${tools}</div>` : ''}
       <div class="nav-section"><div class="nav-label">Notes</div>${dirsHTML(tree, '', 0)}</div>
       <div class="nav-foot">
-        <a class="nav-link" href="#/"><span class="ico">📚</span>All notebooks</a>
         <a class="nav-link" href="#" data-lock><span class="ico">🔒</span>Lock this device</a>
       </div>`;
   }
