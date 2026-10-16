@@ -726,6 +726,11 @@ body::after {
   }
 
   // ---------------------------------------------------------------- markdown
+  // Strike through only with ~~double~~ tildes: notes write "~$16 · ~30 min" for "about".
+  marked.use({ tokenizer: { del(src) {
+    const m = /^~~(?=[^\s~])([\s\S]*?[^\s~])~~(?!~)/.exec(src);
+    if (m) return { type: 'del', raw: m[0], text: m[1], tokens: this.lexer.inlineTokens(m[1]) };
+  } } });
   function renderMarkdown(v, n) {
     // Leave code alone; turn [[wikilinks]] into links everywhere else.
     const segs = n.body.split(/(```[\s\S]*?```|`[^`\n]+`)/);
@@ -1336,12 +1341,27 @@ body::after {
 
   // Tool pages (inside the iframe) can ask to open a note: postMessage({ openNote: "Title" }),
   // optionally at a heading: postMessage({ openNote: "Title", heading: "Heading text or id" }).
+  // They can also open another tool: postMessage({ openTool: "<site.json tool id>" }), with optional
+  // params (e.g. { story: "Title" }, passed on as window.NB_PARAMS) and fallbackNote ("Title", opened
+  // instead when this notebook has no such tool).
   window.addEventListener('message', (e) => {
-    if (!cur || !e.data || typeof e.data.openNote !== 'string') return;
+    if (!cur || !e.data) return;
+    const d = e.data;
+    if (typeof d.openNote !== 'string' && typeof d.openTool !== 'string') return;
     const f = $('#main iframe');
     if (!f || e.source !== f.contentWindow) return;
-    const n = resolve(cur.v, e.data.openNote);
-    const hid = typeof e.data.heading === 'string' ? slug(e.data.heading) : '';
+    if (typeof d.openTool === 'string') {
+      if ((cur.v.tools || []).some((t) => t.id === d.openTool)) {
+        const p = d.params && typeof d.params === 'object'
+          ? Object.entries(d.params).filter(([, x]) => typeof x === 'string' || typeof x === 'number')
+            .map(([k, x]) => enc(k) + '=' + enc(x)).join('&') : '';
+        location.hash = url.tool(cur.v.id, d.openTool, p);
+        return;
+      }
+      if (typeof d.fallbackNote !== 'string') return;
+    }
+    const n = resolve(cur.v, typeof d.openNote === 'string' ? d.openNote : d.fallbackNote);
+    const hid = typeof d.heading === 'string' ? slug(d.heading) : '';
     if (n) location.hash = url.note(cur.v.id, n.path, hid ? 'h=' + enc(hid) : '');
   });
 
