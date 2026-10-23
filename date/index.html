@@ -1,0 +1,1433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>{const f=window.fetch.bind(window);window.fetch=(u,o)=>f(typeof u==='string'&&!/^([a-z][a-z0-9+.-]*:|\/)/i.test(u)?'../'+u:u,o)}</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b0a10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Notebooks">
+<title>Notebooks</title>
+<link rel="icon" href="../shortcut-date.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b0a10;
+  --surface: #14121c;
+  --surface-2: #1d1a28;
+  --glass: rgba(22, 19, 32, .62);
+  --text: #eeeaf6;
+  --muted: #9a93ad;
+  --border: #29253a;
+  --accent: var(--p-accent-dark, #f0789d);
+  --accent-2: color-mix(in oklch, var(--accent), #8b6cff 72%);
+  --grad: linear-gradient(120deg, var(--accent), var(--accent-2));
+  --glow: color-mix(in srgb, var(--accent) 45%, transparent);
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  --accent-line: color-mix(in srgb, var(--accent) 40%, var(--border));
+  --verify-bg: #3a3014; --verify-fg: #f3d27a;
+  --mark: #6d4a9e;
+  --shadow: 0 1px 1px rgba(0,0,0,.4), 0 12px 40px -12px rgba(0,0,0,.7);
+  --aurora-a: .55; --aurora-b: .38;
+  --radius: 16px;
+  --topbar: 58px;
+  --sidebar: 290px;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --serif: "Sora", "Inter", system-ui, sans-serif;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --bg: #f7f5fb; --surface: #ffffff; --surface-2: #f0edf6; --glass: rgba(255,255,255,.72);
+  --text: #221e2c; --muted: #6f6880; --border: #e4dfee;
+  --accent: var(--p-accent, #c0395f); --accent-2: color-mix(in oklch, var(--accent), #6a4cf0 65%);
+  --glow: color-mix(in srgb, var(--accent) 28%, transparent);
+  --verify-bg: #fff2cc; --verify-fg: #7a5600; --mark: #ffe58a;
+  --shadow: 0 1px 2px rgba(40,20,60,.05), 0 10px 30px -10px rgba(40,20,60,.18);
+  --aurora-a: .22; --aurora-b: .16;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.62 var(--font); -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-underline-offset: 2px; text-decoration-thickness: 1px; }
+button { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+/* ---------- lock screen ---------- */
+.lock {
+  min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px;
+  background:
+    radial-gradient(1000px 500px at 10% -10%, color-mix(in srgb, #c0395f 16%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 110% 110%, color-mix(in srgb, #2f7a68 16%, transparent), transparent 60%),
+    var(--bg);
+}
+.lock-card {
+  width: min(400px, 100%); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 22px; padding: 34px 28px 26px; box-shadow: var(--shadow); text-align: center;
+}
+.lock-emoji { font-size: 44px; line-height: 1; }
+.lock-card h1 { font-family: var(--serif); font-weight: 650; font-size: 30px; margin: 12px 0 4px; }
+.lock-card p { color: var(--muted); margin: 0 0 20px; }
+.lock-card input[type=password] {
+  width: 100%; font: inherit; font-size: 17px; padding: 13px 14px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text); outline: none;
+}
+.lock-card input[type=password]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.remember { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 14px 0 18px; color: var(--muted); font-size: 14px; }
+.remember input { accent-color: var(--accent); width: 16px; height: 16px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 0; border-radius: 12px; padding: 12px 18px; font-weight: 600; cursor: pointer;
+  background: var(--accent); color: #fff; text-decoration: none;
+}
+.btn:disabled { opacity: .6; cursor: progress; }
+.btn.block { width: 100%; font-size: 16px; }
+.btn.ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.lock-msg { min-height: 1.4em; margin: 12px 0 0 !important; color: #c0392b !important; font-size: 14px; }
+
+/* ---------- top bar ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 30; height: var(--topbar);
+  display: flex; align-items: center; gap: 8px; padding: 0 12px;
+  padding-top: env(safe-area-inset-top); height: calc(var(--topbar) + env(safe-area-inset-top));
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.icon-btn {
+  flex: none; width: 40px; height: 40px; border-radius: 10px; border: 0; background: transparent;
+  display: grid; place-items: center; cursor: pointer; font-size: 19px; color: var(--muted);
+}
+.icon-btn:hover { background: var(--surface-2); color: var(--text); }
+.brand {
+  display: flex; align-items: center; gap: 8px; min-width: 0; text-decoration: none; color: var(--text);
+  font-family: var(--serif); font-weight: 650; font-size: 19px; white-space: nowrap;
+}
+.brand span { overflow: hidden; text-overflow: ellipsis; }
+.search { flex: 1; display: flex; justify-content: flex-end; min-width: 0; }
+.search input {
+  width: min(360px, 100%); font: inherit; font-size: 15px; padding: 8px 12px 8px 34px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface) no-repeat 11px 50% / 15px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23998' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  color: var(--text); outline: none;
+}
+.search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+@media (max-width: 600px) {
+  .search input { width: 40px; padding-right: 0; cursor: pointer; transition: width .2s; }
+  .search input::placeholder { color: transparent; }
+  .search input:focus, .search input:not(:placeholder-shown) { width: 100%; cursor: text; padding-right: 10px; }
+  .search input:focus::placeholder { color: var(--muted); }
+  .search:focus-within ~ #themeBtn, .search:focus-within ~ #hubBtn, .topbar:has(.search:focus-within) #brandText { display: none; }
+}
+
+/* ---------- shell ---------- */
+.shell { display: flex; min-height: calc(100dvh - var(--topbar)); }
+.sidebar {
+  width: var(--sidebar); flex: none; border-right: 1px solid var(--border); background: var(--surface);
+  position: sticky; top: calc(var(--topbar) + env(safe-area-inset-top));
+  height: calc(100dvh - var(--topbar) - env(safe-area-inset-top));
+  overflow-y: auto; overscroll-behavior: contain; padding: 14px 10px 40px; font-size: 14.5px;
+}
+.main { flex: 1; min-width: 0; }
+.scrim { display: none; }
+body.hub-view .sidebar, body.hub-view #menuBtn, body.hub-view .search, body.hub-view #hubBtn { display: none; }
+a.icon-btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+@media (max-width: 959px) {
+  .sidebar {
+    position: fixed; z-index: 40; left: 0; top: 0; height: 100dvh; width: min(86vw, 320px);
+    transform: translateX(-102%); transition: transform .22s ease; box-shadow: var(--shadow);
+    padding-top: calc(16px + env(safe-area-inset-top));
+  }
+  body.nav-open .sidebar { transform: none; }
+  body.nav-open .scrim { display: block; position: fixed; inset: 0; z-index: 35; background: rgba(0,0,0,.35); }
+}
+@media (min-width: 960px) { #menuBtn { display: none; } }
+
+.nav-section { margin: 4px 0 14px; }
+.nav-label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 6px 10px; font-weight: 600; }
+.nav-link {
+  display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px;
+  color: var(--text); text-decoration: none; line-height: 1.35;
+}
+.nav-link:hover { background: var(--surface-2); }
+.nav-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.nav-link .ico { width: 20px; text-align: center; flex: none; }
+.sidebar details > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 8px; font-weight: 600; user-select: none;
+}
+.sidebar details > summary::-webkit-details-marker { display: none; }
+.sidebar details > summary::after { content: "›"; margin-left: auto; color: var(--muted); transition: transform .15s; font-size: 18px; line-height: 1; }
+.sidebar details[open] > summary::after { transform: rotate(90deg); }
+.sidebar details > summary:hover { background: var(--surface-2); }
+.sidebar details .children { margin-left: 14px; padding-left: 6px; border-left: 1px solid var(--border); }
+.sidebar details details > summary { font-weight: 500; }
+.count { color: var(--muted); font-weight: 400; font-size: 12px; }
+.nav-foot { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px; }
+
+/* ---------- content ---------- */
+.page { max-width: 820px; margin: 0 auto; padding: 26px 20px 80px; }
+@media (max-width: 600px) { .page { padding: 18px 16px 70px; } }
+.crumbs { font-size: 13.5px; color: var(--muted); margin-bottom: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.crumbs a { color: var(--muted); text-decoration: none; }
+.crumbs a:hover { color: var(--accent); }
+.note-head h1 { font-family: var(--serif); font-weight: 650; font-size: clamp(28px, 5vw, 38px); line-height: 1.15; margin: 0 0 10px; letter-spacing: -.01em; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+.chip { display: inline-block; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
+.props { margin: -6px 0 18px; font-size: 13.5px; }
+.props summary { cursor: pointer; color: var(--muted); }
+.props dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 8px 0 0; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+.props dt { color: var(--muted); }
+.props dd { margin: 0; overflow-wrap: anywhere; }
+
+.progress { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin: 0 0 22px; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; box-shadow: var(--shadow); }
+.bar { flex: 1 1 140px; height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .25s; }
+.progress .num { font-weight: 600; font-size: 14px; white-space: nowrap; }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 9px; padding: 2px; }
+.seg button { border: 0; background: transparent; padding: 4px 10px; border-radius: 7px; font-size: 13px; cursor: pointer; color: var(--muted); }
+.seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.08); font-weight: 600; }
+.linkish { border: 0; background: none; color: var(--muted); font-size: 12.5px; cursor: pointer; text-decoration: underline; padding: 0; }
+
+.md { overflow-wrap: break-word; }
+.md > :first-child { margin-top: 0; }
+.md h1, .md h2, .md h3, .md h4 { font-family: var(--serif); font-weight: 650; line-height: 1.25; scroll-margin-top: calc(var(--topbar) + 16px); }
+.md h1 { font-size: 30px; }
+.md h2 { font-size: 23px; margin: 34px 0 10px; padding-top: 6px; }
+.md h3 { font-size: 18.5px; margin: 26px 0 8px; }
+.md h4 { font-size: 16px; margin: 20px 0 6px; }
+.md p { margin: 10px 0; }
+.md ul, .md ol { padding-left: 1.4em; margin: 8px 0; }
+.md li { margin: 4px 0; }
+.md li > p { margin: 4px 0; }
+.md hr { border: 0; border-top: 1px solid var(--border); margin: 28px 0; }
+.md img { max-width: 100%; }
+.md code { font: 13.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
+.md pre { background: var(--surface-2); border-radius: 10px; padding: 12px 14px; overflow-x: auto; }
+.md pre code { background: none; padding: 0; }
+.md blockquote { margin: 14px 0; padding: 4px 16px; border-left: 3px solid var(--accent-line); background: var(--surface); border-radius: 0 10px 10px 0; color: var(--text); }
+.md a.code-link { text-decoration: none; }
+.table-wrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.md table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+.md th, .md td { padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.md th { background: var(--surface-2); font-weight: 600; white-space: nowrap; }
+.md tr:last-child td { border-bottom: 0; }
+.md th:empty { padding: 0; }
+
+.md li.task { list-style: none; position: relative; }
+.md li.task > input[type=checkbox], .md li.task > p > input[type=checkbox] {
+  position: absolute; left: -1.45em; top: .28em; width: 1.08em; height: 1.08em; margin: 0;
+  accent-color: var(--accent); cursor: pointer;
+}
+.md li.task > p { margin: 0; }
+.md li.task.done { color: var(--muted); }
+.md li.task.done > strong, .md li.task.done > p > strong { color: var(--muted); }
+.filter-todo li.task.done { display: none; }
+.filter-done li.task:not(.done) { display: none; }
+
+.verify { display: inline-block; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; padding: 0 7px; border-radius: 99px; background: var(--verify-bg); color: var(--verify-fg); vertical-align: 1px; }
+a.wl { text-decoration: none; border-bottom: 1px solid var(--accent-line); }
+a.wl:hover { border-bottom-color: var(--accent); }
+.wl.broken { color: var(--muted); border-bottom: 1px dashed var(--border); }
+mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1px; }
+
+.callout { margin: 16px 0; border-radius: 12px; padding: 12px 16px; background: color-mix(in srgb, var(--c) 9%, var(--surface)); border: 1px solid color-mix(in srgb, var(--c) 28%, var(--border)); }
+.callout-title { font-weight: 600; color: color-mix(in srgb, var(--c) 75%, var(--text)); margin-bottom: 2px; }
+.callout-body > :first-child { margin-top: 4px; }
+.callout-body > :last-child { margin-bottom: 0; }
+.c-blue { --c: #3b7bd6; } .c-teal { --c: #1f9a8a; } .c-green { --c: #3f9a4a; } .c-amber { --c: #c98a12; }
+.c-orange { --c: #d9731f; } .c-red { --c: #d24545; } .c-purple { --c: #8a55c9; } .c-gray { --c: #8a8480; }
+
+/* past events: hidden unless .show-past (toggled by the bar above the note) */
+.md:not(.show-past) .past-ev { display: none !important; }
+.md.show-past li.past-ev, .md.show-past tr.past-ev { opacity: .55; }
+.past-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; width: fit-content; max-width: 100%;
+  margin: 0 0 18px; padding: 5px 13px; border-radius: 999px; font-size: 13px; color: var(--muted);
+  border: 1px solid var(--border);
+}
+.past-bar button { border: 0; background: none; padding: 0; font-size: inherit; font-weight: 600; color: var(--accent); cursor: pointer; text-underline-offset: 2px; }
+.past-bar button:hover { text-decoration: underline; }
+
+.dv-note { color: var(--muted); font-size: 14px; background: var(--surface); border: 1px dashed var(--border); border-radius: 10px; padding: 10px 14px; margin: 12px 0; }
+
+/* cards */
+.tool-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin: 0 0 28px; }
+.tool-card {
+  display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
+  text-decoration: none; color: var(--text); transition: transform .12s, border-color .12s;
+}
+.tool-card:hover { transform: translateY(-2px); border-color: var(--accent-line); }
+.tool-card .ti { font-size: 24px; }
+.tool-card b { font-weight: 600; }
+.tool-card span { color: var(--muted); font-size: 13px; }
+
+.hub { max-width: 860px; margin: 0 auto; padding: 44px 20px 80px; }
+.hub h1 { font-family: var(--serif); font-weight: 650; font-size: clamp(30px, 6vw, 44px); margin: 0 0 6px; letter-spacing: -.01em; }
+.hub > p { color: var(--muted); margin: 0 0 30px; }
+.proj-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; }
+.proj-card {
+  --accent: var(--pa); position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 6px;
+  padding: 24px 22px 20px; border-radius: 20px; text-decoration: none; color: var(--text);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--pa) 14%, var(--surface)), var(--surface) 70%);
+  border: 1px solid color-mix(in srgb, var(--pa) 25%, var(--border)); box-shadow: var(--shadow);
+  transition: transform .15s, box-shadow .15s;
+}
+.proj-card:hover { transform: translateY(-3px); }
+.proj-card .pe { font-size: 40px; line-height: 1; margin-bottom: 8px; }
+.proj-card h2 { font-family: var(--serif); font-weight: 650; font-size: 24px; margin: 0; }
+.proj-card p { margin: 0; color: var(--muted); }
+.proj-card .go { margin-top: 12px; font-weight: 600; color: var(--pa); }
+.proj-card { --pa: var(--pad); }
+:root[data-theme="light"] .proj-card { --pa: var(--pl); }
+.hub-foot { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 10px; color: var(--muted); font-size: 13.5px; align-items: center; }
+
+.results { list-style: none; padding: 0; margin: 0; }
+.results li { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+.results a.rt { font-weight: 600; text-decoration: none; }
+.results .rp { font-size: 12.5px; color: var(--muted); }
+.results .rs { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
+
+.tool-frame { height: calc(100dvh - var(--topbar) - env(safe-area-inset-top)); display: flex; flex-direction: column; }
+.tool-frame iframe { flex: 1; width: 100%; border: 0; background: var(--bg); }
+.tool-bar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; font-size: 14px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.tool-bar b { font-weight: 600; }
+.copy-row { display: flex; gap: 8px; margin: 10px 0 16px; }
+.copy-row input { flex: 1; min-width: 0; font: 13px ui-monospace, Menlo, monospace; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); }
+.btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 20px; }
+
+.foot { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
+.loading { padding: 60px 20px; text-align: center; color: var(--muted); }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation-duration: 0s !important; } }
+
+/* ================================================================ aurora layer */
+body { background: var(--bg); min-height: 100dvh; }
+body::before, body::after {
+  content: ""; position: fixed; z-index: -1; pointer-events: none; border-radius: 50%;
+  filter: blur(90px); will-change: transform;
+}
+body::before {
+  width: 70vmax; height: 70vmax; left: -25vmax; top: -30vmax;
+  background: radial-gradient(circle, var(--accent), transparent 65%); opacity: var(--aurora-a);
+  animation: drift1 26s ease-in-out infinite alternate;
+}
+body::after {
+  width: 60vmax; height: 60vmax; right: -25vmax; bottom: -30vmax;
+  background: radial-gradient(circle, var(--accent-2), transparent 65%); opacity: var(--aurora-b);
+  animation: drift2 32s ease-in-out infinite alternate;
+}
+@keyframes drift1 { to { transform: translate(18vw, 14vh) scale(1.15); } }
+@keyframes drift2 { to { transform: translate(-16vw, -12vh) scale(1.1); } }
+.lock, .shell, .main { background: transparent; }
+.lock { background: transparent; }
+.lock-card, .tool-card, .proj-card, .progress, .results li, .table-wrap, .props dl, .md blockquote, .dv-note, .past-bar {
+  background-color: var(--glass);
+  backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
+}
+.lock-card { border-radius: 26px; box-shadow: var(--shadow), 0 0 80px -30px var(--glow); }
+.lock-card h1, .hub h1, .note-head h1 { letter-spacing: -.025em; font-weight: 700; }
+.gt {
+  background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+  letter-spacing: -.025em; font-weight: 700;
+}
+.lock-emoji { filter: drop-shadow(0 6px 20px var(--glow)); }
+.brand { font-weight: 700; letter-spacing: -.01em; }
+.topbar { background: color-mix(in srgb, var(--bg) 62%, transparent); border-bottom-color: color-mix(in srgb, var(--border) 70%, transparent); }
+.topbar::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-2), transparent); opacity: .55;
+}
+.sidebar { background: color-mix(in srgb, var(--surface) 72%, transparent); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+@media (max-width: 959px) { .sidebar { background: color-mix(in srgb, var(--surface) 92%, transparent); } }
+.nav-link.active { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
+.nav-link.active .ico { filter: drop-shadow(0 0 6px var(--glow)); }
+
+.btn { background: var(--grad); box-shadow: 0 6px 24px -8px var(--glow); transition: transform .12s, box-shadow .12s, filter .12s; }
+.btn:hover { transform: translateY(-1px); box-shadow: 0 10px 30px -8px var(--glow); filter: brightness(1.08); }
+.btn.ghost { background: var(--glass); box-shadow: none; backdrop-filter: blur(12px); }
+.lock-card input[type=password], .search input { background-color: color-mix(in srgb, var(--surface-2) 80%, transparent); }
+
+.md h2 { padding-bottom: 8px; background: var(--grad) left bottom / 44px 3px no-repeat; }
+.md h3 { color: color-mix(in srgb, var(--accent) 30%, var(--text)); }
+.md blockquote { border-left: 3px solid; border-image: var(--grad) 1; border-radius: 0; }
+.md th { background: color-mix(in srgb, var(--accent) 10%, var(--surface-2)); }
+.md tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.chip { background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: var(--accent-line); color: color-mix(in srgb, var(--accent) 55%, var(--text)); }
+.callout { background: color-mix(in srgb, var(--c) 12%, var(--glass)); backdrop-filter: blur(14px); box-shadow: inset 3px 0 0 var(--c); }
+
+.bar { background: color-mix(in srgb, var(--surface-2) 80%, transparent); }
+.bar > i { background: var(--grad); box-shadow: 0 0 14px var(--glow); }
+
+.md li.task > input[type=checkbox], .md li.task > p > input[type=checkbox] {
+  appearance: none; -webkit-appearance: none; border-radius: 6px; border: 1.5px solid var(--accent-line);
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent); display: grid; place-items: center;
+  transition: background .15s, box-shadow .15s, transform .1s;
+}
+.md li.task > input[type=checkbox]:hover, .md li.task > p > input[type=checkbox]:hover { border-color: var(--accent); }
+.md li.task > input[type=checkbox]:active, .md li.task > p > input[type=checkbox]:active { transform: scale(.9); }
+.md li.task > input[type=checkbox]:checked, .md li.task > p > input[type=checkbox]:checked {
+  border-color: transparent; box-shadow: 0 0 12px var(--glow);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E") center / 78% no-repeat, var(--grad);
+}
+.md li.task.done { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 50%, transparent); }
+
+.tool-card { position: relative; transition: transform .15s, box-shadow .15s, border-color .15s; }
+.tool-card:hover { transform: translateY(-3px); border-color: var(--accent-line); box-shadow: var(--shadow), 0 14px 40px -16px var(--glow); }
+.tool-card .ti { filter: drop-shadow(0 4px 12px var(--glow)); }
+
+.eyebrow { font: 600 12px/1 var(--font); text-transform: uppercase; letter-spacing: .18em; color: var(--accent); margin-bottom: 12px; }
+.hub { padding-top: 64px; }
+.hub h1 { font-size: clamp(36px, 8vw, 60px); line-height: 1.02; margin-bottom: 12px; }
+.proj-cards { gap: 18px; }
+.proj-card {
+  --accent: var(--pa); --glow: color-mix(in srgb, var(--pa) 50%, transparent);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--pa) 16%, transparent), transparent 70%), var(--glass);
+  border: 1px solid color-mix(in srgb, var(--pa) 30%, var(--border)); border-radius: 24px; padding: 28px 24px 22px;
+  isolation: isolate; transition: transform .2s, box-shadow .2s, border-color .2s;
+}
+.proj-card .pglow {
+  position: absolute; z-index: -1; width: 220px; height: 220px; right: -70px; top: -90px; border-radius: 50%;
+  background: radial-gradient(circle, var(--pa), transparent 70%); opacity: .35; filter: blur(20px);
+  transition: opacity .25s, transform .4s;
+}
+.proj-card::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.09) 50%, transparent 65%) -200% 0 / 250% 100% no-repeat;
+  transition: background-position .7s ease;
+}
+.proj-card:hover { transform: translateY(-5px); border-color: color-mix(in srgb, var(--pa) 60%, var(--border)); box-shadow: var(--shadow), 0 24px 60px -20px var(--glow); }
+.proj-card:hover .pglow { opacity: .6; transform: scale(1.2); }
+.proj-card:hover::after { background-position: 200% 0; }
+.proj-card .pe { font-size: 46px; filter: drop-shadow(0 8px 22px var(--glow)); }
+.proj-card h2 { font-size: 25px; font-weight: 700; letter-spacing: -.02em; }
+.proj-card .go { display: inline-flex; gap: 6px; transition: gap .2s; }
+.proj-card:hover .go { gap: 12px; }
+
+.page, .hub { animation: rise .35s ease both; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+.tool-bar { background: var(--glass); backdrop-filter: blur(16px); }
+.spinner { border-color: var(--border); border-top-color: var(--accent); box-shadow: 0 0 20px -4px var(--glow); }
+::selection { background: color-mix(in srgb, var(--accent) 40%, transparent); }
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+@media (prefers-reduced-motion: reduce) { body::before, body::after { animation: none; } }
+</style>
+</head>
+<body>
+
+<div id="lock" class="lock" hidden>
+  <form class="lock-card" id="lockForm" autocomplete="on">
+    <div class="lock-emoji">📚</div>
+    <h1><span class="gt">Notebooks</span></h1>
+    <p>Enter the family passphrase to open.</p>
+    <input type="text" name="username" value="notebooks" autocomplete="username" hidden>
+    <input id="pass" type="password" autocomplete="current-password" placeholder="Passphrase" aria-label="Passphrase" required>
+    <label class="remember"><input id="remember" type="checkbox" checked> Remember on this device</label>
+    <button id="unlockBtn" class="btn block" type="submit">Unlock</button>
+    <p id="lockMsg" class="lock-msg" role="alert"></p>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header class="topbar">
+    <button id="menuBtn" class="icon-btn" aria-label="Open menu">☰</button>
+    <a id="brand" class="brand" href="#/"><span id="brandEmoji">📚</span><span id="brandText">Notebooks</span></a>
+    <form id="searchForm" class="search" role="search"><input id="q" type="search" placeholder="Search" aria-label="Search this notebook" enterkeyhint="search"></form>
+    <button id="themeBtn" class="icon-btn" aria-label="Change theme" title="Theme">◐</button>
+    <a id="hubBtn" class="icon-btn" href="#/" aria-label="All notebooks" title="All notebooks">📚</a>
+  </header>
+  <div class="shell">
+    <nav id="sidebar" class="sidebar" aria-label="Notebook"></nav>
+    <div id="scrim" class="scrim"></div>
+    <main id="main" class="main"></main>
+  </div>
+</div>
+
+<script src="../marked.min.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  // Must match pack.mjs.
+  const SALT = 'notebooks-v1', ITERATIONS = 600000, MAGIC = 'NBK1';
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const enc = encodeURIComponent;
+  const te = new TextEncoder();
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const store = {
+    get(k, d = null) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } },
+    del(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } },
+  };
+  const b64enc = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const b64dec = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  const natural = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+  let KEY = null;
+  let PROJECTS = [];
+  const VAULTS = {};
+  let cur = null; // { proj, v }
+
+  // ---------------------------------------------------------------- crypto
+  async function deriveKey(pass) {
+    const base = await crypto.subtle.importKey('raw', te.encode(pass), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: te.encode(SALT), iterations: ITERATIONS, hash: 'SHA-256' },
+      base, { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
+  }
+
+  async function loadVault(pid, key = KEY) {
+    if (VAULTS[pid]) return VAULTS[pid];
+    const res = await fetch(pid + '/vault.bin', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('download failed (' + res.status + ')');
+    const buf = new Uint8Array(await res.arrayBuffer());
+    if (new TextDecoder().decode(buf.subarray(0, 4)) !== MAGIC) throw new Error('unexpected file format');
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.subarray(4, 16) }, key, buf.subarray(16));
+    const text = await new Response(new Blob([plain]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+    return (VAULTS[pid] = prepVault(JSON.parse(text)));
+  }
+
+  // ---------------------------------------------------------------- vault model
+  function yval(s) {
+    s = s.trim();
+    if (!s) return null;
+    if (/^\[.*\]$/.test(s)) return s.slice(1, -1).split(',').map(yval).filter((x) => x != null);
+    if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s);
+    if (s === 'true' || s === 'false') return s === 'true';
+    if (/^(["']).*\1$/.test(s)) return s.slice(1, -1);
+    return s;
+  }
+  function parseFrontmatter(md) {
+    const m = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(md);
+    if (!m) return [{}, md];
+    const fm = {};
+    let last = null;
+    for (const line of m[1].split(/\r?\n/)) {
+      const kv = /^([\w][\w -]*?):\s*(.*)$/.exec(line);
+      if (kv) { last = kv[1]; fm[last] = yval(kv[2]); continue; }
+      const li = /^\s*-\s+(.*)$/.exec(line);
+      if (li && last) { if (!Array.isArray(fm[last])) fm[last] = []; fm[last].push(yval(li[1])); }
+    }
+    return [fm, md.slice(m[0].length)];
+  }
+  function prepVault(v) {
+    v.byPath = new Map();
+    v.byTitle = new Map();
+    for (const n of v.notes) {
+      const [fm, body] = parseFrontmatter(n.md);
+      n.fm = fm;
+      n.body = body;
+      n.title = n.path.split('/').pop();
+      n.dir = n.path.includes('/') ? n.path.slice(0, n.path.lastIndexOf('/')) : '';
+      v.byPath.set(n.path.toLowerCase(), n);
+      if (!v.byTitle.has(n.title.toLowerCase())) v.byTitle.set(n.title.toLowerCase(), n);
+    }
+    v.homeNote = v.byPath.get(String(v.home).toLowerCase()) || v.notes[0];
+    return v;
+  }
+  function resolve(v, name) {
+    const k = name.trim().replace(/\.md$/i, '').replace(/^\.?\//, '').toLowerCase();
+    return v.byPath.get(k) || v.byTitle.get(k) || v.byTitle.get(k.split('/').pop()) || null;
+  }
+  const prettyDir = (name) => name.replace(/^\d+\s+/, '').replace(/^_/, '');
+  const slug = (s) => String(s).toLowerCase().replace(/<[^>]+>/g, '').replace(/[^\p{L}\p{N}\s-]/gu, '').trim().replace(/\s+/g, '-');
+
+  // ---------------------------------------------------------------- routes
+  const path2url = (p) => p.split('/').map(enc).join('/');
+  const url = {
+    hub: () => '#/',
+    project: (pid) => '#/' + enc(pid),
+    note: (pid, p, extra) => '#/' + enc(pid) + '/n/' + path2url(p) + (extra ? '?' + extra : ''),
+    tool: (pid, id, extra) => '#/' + enc(pid) + '/t/' + enc(id) + (extra ? '?' + extra : ''),
+    search: (pid, q) => '#/' + enc(pid) + '/s?q=' + enc(q),
+  };
+  function parseRoute() {
+    let raw = location.hash.replace(/^#\/?/, '');
+    let qs = '';
+    const qi = raw.indexOf('?');
+    if (qi >= 0) { qs = raw.slice(qi + 1); raw = raw.slice(0, qi); }
+    const parts = raw.split('/').filter((x, i) => x || i < 2).map((x) => { try { return decodeURIComponent(x); } catch (e) { return x; } });
+    return { pid: parts[0] || '', kind: parts[1] || '', rest: parts.slice(2).join('/'), params: new URLSearchParams(qs) };
+  }
+
+  // ---------------------------------------------------------------- theme
+  // Dark is the default; light is opt-in.
+  const theme = () => (store.get('nb:theme') === 'light' ? 'light' : 'dark');
+  function applyTheme() {
+    const t = theme();
+    document.documentElement.setAttribute('data-theme', t);
+    $('#themeBtn').textContent = t === 'light' ? '☀' : '☾';
+    $('#themeBtn').title = t === 'light' ? 'Switch to dark' : 'Switch to light';
+    $('meta[name=theme-color]').content = t === 'light' ? '#f7f5fb' : '#0b0a10';
+    const f = $('.tool-frame iframe');
+    if (f && f.contentDocument) f.contentDocument.documentElement.setAttribute('data-theme', t);
+  }
+  $('#themeBtn').addEventListener('click', () => {
+    store.set('nb:theme', theme() === 'light' ? 'dark' : 'light');
+    applyTheme();
+  });
+
+  // ---------------------------------------------------------------- nav drawer
+  const openNav = () => document.body.classList.add('nav-open');
+  const closeNav = () => document.body.classList.remove('nav-open');
+  $('#menuBtn').addEventListener('click', openNav);
+  $('#scrim').addEventListener('click', closeNav);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeNav();
+    if (e.key === '/' && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && cur) { e.preventDefault(); $('#q').focus(); }
+  });
+
+  // ---------------------------------------------------------------- lock
+  function showLock(msg) {
+    $('#app').hidden = true;
+    $('#lock').hidden = false;
+    $('#lockMsg').textContent = msg || '';
+    setTimeout(() => $('#pass').focus(), 50);
+  }
+  $('#lockForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('#unlockBtn');
+    btn.disabled = true;
+    btn.textContent = 'Unlocking…';
+    $('#lockMsg').textContent = '';
+    try {
+      const key = await deriveKey($('#pass').value);
+      await verifyKey(key);
+      KEY = key;
+      if ($('#remember').checked) store.set('nb:key', b64enc(await crypto.subtle.exportKey('raw', key)));
+      $('#pass').value = '';
+      start();
+    } catch (err) {
+      $('#lockMsg').textContent = err && err.name === 'OperationError'
+        ? "That passphrase didn't work. Try again?"
+        : 'Could not open the notebooks: ' + (err && err.message || err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Unlock';
+    }
+  });
+  async function verifyKey(key) {
+    if (!PROJECTS.length) return;
+    const want = parseRoute().pid;
+    const pid = PROJECTS.some((p) => p.id === want) ? want : PROJECTS[0].id;
+    for (const k of Object.keys(VAULTS)) delete VAULTS[k];
+    await loadVault(pid, key);
+  }
+  function lockNow() {
+    store.del('nb:key');
+    location.hash = '#/';
+    location.reload();
+  }
+
+  // ---------------------------------------------------------------- project chrome
+  function setProject(proj, v) {
+    const root = document.documentElement.style;
+    if (proj) {
+      root.setProperty('--p-accent', proj.accent);
+      root.setProperty('--p-accent-dark', proj.accentDark);
+      $('#brandEmoji').textContent = proj.emoji;
+      $('#brandText').textContent = proj.title;
+      $('#brand').href = url.project(proj.id);
+      $('#q').placeholder = 'Search ' + proj.title;
+      document.body.classList.remove('hub-view');
+    } else {
+      root.removeProperty('--p-accent');
+      root.removeProperty('--p-accent-dark');
+      $('#brandEmoji').textContent = '📚';
+      $('#brandText').textContent = 'Notebooks';
+      $('#brand').href = '#/';
+      document.body.classList.add('hub-view');
+    }
+    if (!v) {
+      // Hub, or a notebook still loading: no sidebar yet.
+      cur = null;
+      $('#sidebar').innerHTML = '';
+    } else if (!cur || cur.v !== v) {
+      cur = { proj, v };
+      $('#sidebar').innerHTML = sidebarHTML(proj, v);
+      wireSidebar(v);
+    }
+  }
+
+  function sidebarHTML(proj, v) {
+    const pid = proj.id;
+    const tree = { dirs: new Map(), notes: [] };
+    for (const n of v.notes) {
+      let node = tree;
+      if (n.dir) for (const seg of n.dir.split('/')) {
+        if (!node.dirs.has(seg)) node.dirs.set(seg, { dirs: new Map(), notes: [] });
+        node = node.dirs.get(seg);
+      }
+      node.notes.push(n);
+    }
+    const countNotes = (node) => node.notes.length + [...node.dirs.values()].reduce((a, d) => a + countNotes(d), 0);
+    const openSet = new Set(store.get('nb:open:' + pid, null) || [...tree.dirs.keys()]);
+    const notesHTML = (arr) => arr
+      .filter((n) => n !== v.homeNote)
+      .sort((a, b) => natural.compare(a.title, b.title))
+      .map((n) => `<a class="nav-link" data-path="${esc(n.path)}" href="${url.note(pid, n.path)}">${esc(n.title)}</a>`).join('');
+    const dirsHTML = (node, prefix, depth) => {
+      const order = depth === 0 ? v.folderOrder : [];
+      const names = [...node.dirs.keys()].sort((a, b) => {
+        const ia = order.indexOf(a), ib = order.indexOf(b);
+        if (ia >= 0 || ib >= 0) return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+        return natural.compare(a, b);
+      });
+      return names.map((name) => {
+        const d = node.dirs.get(name);
+        const full = prefix ? prefix + '/' + name : name;
+        const icon = depth === 0 ? (v.folderIcons[name] || '📁') : '';
+        return `<details data-dir="${esc(full)}"${openSet.has(full) ? ' open' : ''}>
+          <summary>${icon ? `<span class="ico">${icon}</span>` : ''}${esc(prettyDir(name))} <span class="count">${countNotes(d)}</span></summary>
+          <div class="children">${notesHTML(d.notes)}${dirsHTML(d, full, depth + 1)}</div></details>`;
+      }).join('');
+    };
+    const tools = (v.tools || []).map((t) =>
+      `<a class="nav-link" data-tool="${esc(t.id)}" href="${url.tool(pid, t.id)}"><span class="ico">${t.icon}</span>${esc(t.title)}</a>`).join('');
+    return `
+      <div class="nav-section">
+        <a class="nav-link" href="#/"><span class="ico">📚</span>All notebooks</a>
+        <a class="nav-link" data-path="${esc(v.homeNote.path)}" href="${url.project(pid)}"><span class="ico">🏠</span>${esc(v.homeNote.title === 'Home' ? 'Home' : v.homeNote.title)}</a>
+        ${notesHTML(tree.notes)}
+      </div>
+      ${tools ? `<div class="nav-section"><div class="nav-label">Tools</div>${tools}</div>` : ''}
+      <div class="nav-section"><div class="nav-label">Notes</div>${dirsHTML(tree, '', 0)}</div>
+      <div class="nav-foot">
+        <a class="nav-link" href="#" data-lock><span class="ico">🔒</span>Lock this device</a>
+      </div>`;
+  }
+  function wireSidebar(v) {
+    const pid = v.id;
+    $$('#sidebar details').forEach((d) => d.addEventListener('toggle', () => {
+      store.set('nb:open:' + pid, $$('#sidebar details[open]').map((x) => x.dataset.dir));
+    }));
+    $('#sidebar [data-lock]').addEventListener('click', (e) => { e.preventDefault(); lockNow(); });
+  }
+  function markActive(sel) {
+    $$('#sidebar .active').forEach((a) => a.classList.remove('active'));
+    const a = sel && $(sel, $('#sidebar'));
+    if (!a) return;
+    a.classList.add('active');
+    for (let d = a.parentElement.closest('details'); d; d = d.parentElement.closest('details')) d.open = true;
+    const sb = $('#sidebar');
+    const r = a.getBoundingClientRect(), s = sb.getBoundingClientRect();
+    if (r.top < s.top || r.bottom > s.bottom) a.scrollIntoView({ block: 'center' });
+  }
+
+  // ---------------------------------------------------------------- markdown
+  // Strike through only with ~~double~~ tildes: notes write "~$16 · ~30 min" for "about".
+  marked.use({ tokenizer: { del(src) {
+    const m = /^~~(?=[^\s~])([\s\S]*?[^\s~])~~(?!~)/.exec(src);
+    if (m) return { type: 'del', raw: m[0], text: m[1], tokens: this.lexer.inlineTokens(m[1]) };
+  } } });
+  function renderMarkdown(v, n) {
+    // Leave code alone; turn [[wikilinks]] into links everywhere else.
+    const segs = n.body.split(/(```[\s\S]*?```|`[^`\n]+`)/);
+    for (let i = 0; i < segs.length; i += 2) {
+      segs[i] = segs[i].replace(/!?\[\[([^\]\n]+?)\]\]/g, (m, inner) => wikilink(v, n, inner));
+    }
+    return marked.parse(segs.join(''), { gfm: true });
+  }
+  function wikilink(v, from, inner) {
+    inner = inner.replace(/\\\|/g, '|');
+    const bar = inner.indexOf('|');
+    const target = bar >= 0 ? inner.slice(0, bar) : inner;
+    const alias = bar >= 0 ? inner.slice(bar + 1) : '';
+    const hash = target.indexOf('#');
+    const page = (hash >= 0 ? target.slice(0, hash) : target).trim();
+    const head = hash >= 0 ? target.slice(hash + 1).replace(/^\^/, '').trim() : '';
+    const n = page ? resolve(v, page) : from;
+    const text = esc(alias || (page ? page.split('/').pop() : head));
+    if (!n) return `<span class="wl broken" title="Not in this notebook">${text}</span>`;
+    return `<a class="wl" href="${url.note(v.id, n.path, head ? 'h=' + enc(slug(head)) : '')}">${text}</a>`;
+  }
+
+  const CALLOUTS = {
+    note: ['c-blue', '✏️'], info: ['c-blue', 'ℹ️'], todo: ['c-blue', '☑️'], abstract: ['c-teal', '📋'], summary: ['c-teal', '📋'],
+    tip: ['c-teal', '💡'], hint: ['c-teal', '💡'], important: ['c-teal', '❗'], success: ['c-green', '✅'], check: ['c-green', '✅'],
+    done: ['c-green', '✅'], question: ['c-amber', '❓'], help: ['c-amber', '❓'], faq: ['c-amber', '❓'], warning: ['c-orange', '⚠️'],
+    caution: ['c-orange', '⚠️'], attention: ['c-orange', '⚠️'], failure: ['c-red', '✖️'], danger: ['c-red', '⚡'], error: ['c-red', '⚡'],
+    bug: ['c-red', '🐞'], example: ['c-purple', '🧪'], quote: ['c-gray', '❝'], cite: ['c-gray', '❝'],
+  };
+
+  function enhance(v, n, root, opts) {
+    // headings -> ids
+    const seen = {};
+    $$('h1,h2,h3,h4,h5,h6', root).forEach((h) => {
+      let id = slug(h.textContent) || 'section';
+      if (seen[id]) id += '-' + ++seen[id]; else seen[id] = 1;
+      h.id = id;
+    });
+    // callouts
+    $$('blockquote', root).forEach((bq) => {
+      const p = bq.firstElementChild;
+      if (!p || p.tagName !== 'P') return;
+      const m = /^\[!([\w-]+)\]([+-]?)[ \t]*(.*?)(?:\n|<br\s*\/?>|$)/.exec(p.innerHTML);
+      if (!m) return;
+      const type = m[1].toLowerCase();
+      const [cls, icon] = CALLOUTS[type] || ['c-blue', '📌'];
+      p.innerHTML = p.innerHTML.slice(m[0].length);
+      if (!p.innerHTML.trim()) p.remove();
+      const box = document.createElement('div');
+      box.className = 'callout ' + cls;
+      box.innerHTML = `<div class="callout-title">${icon} ${m[3].trim() || type[0].toUpperCase() + type.slice(1)}</div>`;
+      const body = document.createElement('div');
+      body.className = 'callout-body';
+      while (bq.firstChild) body.appendChild(bq.firstChild);
+      box.appendChild(body);
+      bq.replaceWith(box);
+    });
+    // dataview
+    $$('pre > code', root).forEach((code) => {
+      const lang = (code.className.match(/language-(\S+)/) || [])[1];
+      if (lang !== 'dataview' && lang !== 'dataviewjs') return;
+      const div = document.createElement('div');
+      div.innerHTML = (lang === 'dataview' && runDataview(v, code.textContent)) ||
+        '<div class="dv-note">🔎 This is a live Obsidian list (Dataview), so it only shows up inside Obsidian.</div>';
+      code.parentElement.replaceWith(...div.childNodes);
+    });
+    // tables scroll sideways on phones
+    $$('table', root).forEach((t) => {
+      if (t.parentElement.classList.contains('table-wrap')) return;
+      const w = document.createElement('div');
+      w.className = 'table-wrap';
+      t.replaceWith(w);
+      w.appendChild(t);
+    });
+    // links
+    $$('a[href]', root).forEach((a) => {
+      const h = a.getAttribute('href');
+      if (/^https?:/i.test(h)) { a.target = '_blank'; a.rel = 'noopener'; return; }
+      if (/\.md(#.*)?$/i.test(h)) {
+        const [p, frag] = decodeURI(h).split('#');
+        const t = resolve(v, n.dir && !p.includes('/') ? n.dir + '/' + p : p) || resolve(v, p);
+        if (t) a.href = url.note(v.id, t.path, frag ? 'h=' + enc(slug(frag)) : '');
+      }
+    });
+    // inline code that names a tool file -> open the tool
+    $$('code', root).forEach((c) => {
+      const tid = v.codeLinks && v.codeLinks[c.textContent.trim()];
+      if (!tid || c.closest('pre, a')) return;
+      const a = document.createElement('a');
+      a.className = 'code-link';
+      a.href = url.tool(v.id, tid);
+      c.replaceWith(a);
+      a.appendChild(c);
+    });
+    // (verify) pills
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const hits = [];
+    while (walker.nextNode()) if (walker.currentNode.nodeValue.includes('(verify)')) hits.push(walker.currentNode);
+    hits.forEach((t) => {
+      if (t.parentElement.closest('code, pre')) return;
+      const span = document.createElement('span');
+      span.innerHTML = esc(t.nodeValue).replace(/\(verify\)/g, '<span class="verify" title="Unconfirmed: double-check before going">verify</span>');
+      t.replaceWith(...span.childNodes);
+    });
+    // checkboxes
+    wireTasks(v, n, root, opts.progressHost);
+  }
+
+  function taskKey(li) {
+    const c = li.cloneNode(true);
+    $$('ul, ol', c).forEach((x) => x.remove());
+    return c.textContent.replace(/\s+/g, ' ').trim().slice(0, 180);
+  }
+  function wireTasks(v, n, root, host) {
+    const skey = 'nb:checks:' + v.id + ':' + n.path;
+    const boxes = $$('li > input[type=checkbox], li > p:first-child > input[type=checkbox]', root);
+    if (!boxes.length) return;
+    const saved = store.get(skey, {});
+    const items = boxes.map((cb) => {
+      const li = cb.closest('li');
+      li.classList.add('task');
+      const key = taskKey(li);
+      const orig = cb.checked;
+      cb.disabled = false;
+      if (key in saved) cb.checked = saved[key];
+      li.classList.toggle('done', cb.checked);
+      cb.addEventListener('change', () => {
+        const s = store.get(skey, {});
+        if (cb.checked === orig) delete s[key]; else s[key] = cb.checked;
+        store.set(skey, s);
+        li.classList.toggle('done', cb.checked);
+        update();
+      });
+      return { cb, li, orig, key };
+    });
+    if (boxes.length < 4 || !host) return;
+    const filterKey = 'nb:filter';
+    host.innerHTML = `<div class="progress">
+        <span class="num"></span><div class="bar"><i></i></div>
+        <div class="seg" role="group" aria-label="Show">
+          <button data-f="all">All</button><button data-f="todo">To do</button><button data-f="done">Done</button>
+        </div>
+        <button class="linkish" data-reset hidden>Undo my changes here</button>
+      </div>`;
+    const setFilter = (f) => {
+      root.classList.toggle('filter-todo', f === 'todo');
+      root.classList.toggle('filter-done', f === 'done');
+      $$('.seg button', host).forEach((b) => b.classList.toggle('on', b.dataset.f === f));
+      store.set(filterKey, f);
+    };
+    $$('.seg button', host).forEach((b) => b.addEventListener('click', () => setFilter(b.dataset.f)));
+    setFilter(store.get(filterKey, 'all'));
+    $('[data-reset]', host).addEventListener('click', () => {
+      if (!confirm('Put every checkbox on this page back the way the notebook has it?')) return;
+      store.del(skey);
+      items.forEach((it) => { it.cb.checked = it.orig; it.li.classList.toggle('done', it.orig); });
+      update();
+    });
+    function update() {
+      const done = items.filter((it) => it.cb.checked).length;
+      $('.num', host).textContent = `✓ ${done} of ${items.length}`;
+      $('.bar > i', host).style.width = (100 * done / items.length).toFixed(1) + '%';
+      $('[data-reset]', host).hidden = !Object.keys(store.get(skey, {})).length;
+    }
+    update();
+  }
+
+  // ---------------------------------------------------------------- mini Dataview
+  // Supports the TABLE queries these vaults use: FROM "folder", WHERE with
+  // AND of `x = "y"`, `x != "y"`, `x`, `!x`; SORT field [ASC|DESC]; LIMIT n;
+  // GROUP BY field with length(rows) and length(filter(rows.x, (d) => d)).
+  function splitTop(s) {
+    const out = [];
+    let depth = 0, quote = false, cur = '';
+    for (const ch of s) {
+      if (ch === '"') quote = !quote;
+      if (!quote && ch === '(') depth++;
+      if (!quote && ch === ')') depth--;
+      if (ch === ',' && !depth && !quote) { out.push(cur); cur = ''; } else cur += ch;
+    }
+    if (cur.trim()) out.push(cur);
+    return out.map((x) => x.trim());
+  }
+  const truthy = (x) => x != null && x !== '' && x !== false && !(Array.isArray(x) && !x.length);
+  function field(n, f) {
+    if (f === 'file.name') return n.title;
+    if (f === 'file.path') return n.path + '.md';
+    if (f === 'file.folder') return n.dir;
+    if (f.startsWith('file.')) return undefined;
+    return f in n.fm ? n.fm[f] : n.fm[f.toLowerCase()];
+  }
+  function parseCond(s) {
+    s = s.trim();
+    let m;
+    if ((m = /^!\s*([\w.]+)$/.exec(s))) return (n) => !truthy(field(n, m[1]));
+    if ((m = /^([\w.]+)\s*(!?=)\s*"([^"]*)"$/.exec(s))) {
+      const [, f, op, val] = m;
+      return (n) => {
+        const x = field(n, f);
+        const eq = Array.isArray(x) ? x.map(String).includes(val) : String(x ?? '') === val;
+        return op === '=' ? eq : !eq;
+      };
+    }
+    if ((m = /^([\w.]+)\s*(!?=)\s*(-?\d+(?:\.\d+)?|true|false)$/.exec(s))) {
+      const [, f, op, raw] = m;
+      const val = yval(raw);
+      return (n) => (field(n, f) === val) === (op === '=');
+    }
+    if ((m = /^([\w.]+)$/.exec(s))) return (n) => truthy(field(n, m[1]));
+    return null;
+  }
+  function cmpVals(a, b) {
+    const na = a == null || a === '', nb = b == null || b === '';
+    if (na || nb) return na === nb ? 0 : na ? 1 : -1;
+    if (typeof a === 'number' && typeof b === 'number') return a - b;
+    return natural.compare(String(a), String(b));
+  }
+  function cell(v, x) {
+    if (x == null || x === '') return '<span class="count">—</span>';
+    if (Array.isArray(x)) return x.map((y) => esc(y)).join(', ');
+    return esc(x);
+  }
+  function runDataview(v, q) {
+    try {
+      const lines = q.trim().split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+      const head = /^TABLE(\s+WITHOUT\s+ID)?\s+(.+)$/i.exec(lines[0] || '');
+      if (!head) return null;
+      const withoutId = !!head[1];
+      const cols = splitTop(head[2]).map((c) => {
+        const m = /^(.*?)\s+AS\s+"([^"]*)"$/i.exec(c);
+        return m ? { expr: m[1].trim(), label: m[2] } : { expr: c, label: c };
+      });
+      let from = null, sort = null, limit = null, group = null;
+      const where = [];
+      for (const l of lines.slice(1)) {
+        let m;
+        if ((m = /^FROM\s+"([^"]*)"$/i.exec(l))) from = m[1].replace(/\/$/, '');
+        else if ((m = /^WHERE\s+(.+)$/i.exec(l))) where.push(...m[1].split(/\s+AND\s+/i).map(parseCond));
+        else if ((m = /^SORT\s+([\w.]+)(?:\s+(ASC|DESC))?$/i.exec(l))) sort = { f: m[1], desc: /desc/i.test(m[2] || '') };
+        else if ((m = /^LIMIT\s+(\d+)$/i.exec(l))) limit = +m[1];
+        else if ((m = /^GROUP\s+BY\s+([\w.]+)$/i.exec(l))) group = m[1];
+        else return null;
+      }
+      if (where.some((c) => !c)) return null;
+      let rows = v.notes.filter((n) => !from || n.path === from || n.path.startsWith(from + '/'));
+      rows = rows.filter((n) => where.every((c) => c(n)));
+      let headers, body;
+      if (group) {
+        const groups = new Map();
+        for (const n of rows) {
+          const k = field(n, group);
+          const kk = k == null ? '—' : String(k);
+          if (!groups.has(kk)) groups.set(kk, []);
+          groups.get(kk).push(n);
+        }
+        let gs = [...groups].map(([key, rs]) => ({ key, rows: rs }));
+        if (sort) {
+          gs.sort((a, b) => cmpVals(a.key, b.key));
+          if (sort.desc) gs.reverse();
+        }
+        if (limit != null) gs = gs.slice(0, limit);
+        const gexpr = (expr, g) => {
+          let m;
+          if (expr === 'key') return esc(g.key);
+          if (expr === 'length(rows)') return String(g.rows.length);
+          if ((m = /^length\(filter\(rows\.([\w.]+),\s*\((\w+)\)\s*=>\s*\2\s*\)\)$/.exec(expr))) return String(g.rows.filter((n) => truthy(field(n, m[1]))).length);
+          throw new Error('unsupported');
+        };
+        headers = (withoutId ? [] : [esc(group)]).concat(cols.map((c) => esc(c.label)));
+        body = gs.map((g) => (withoutId ? [] : [esc(g.key)]).concat(cols.map((c) => gexpr(c.expr, g))));
+        if (withoutId && !cols.some((c) => c.expr === 'key')) { headers.unshift(esc(group)); body.forEach((r, i) => r.unshift(esc(gs[i].key))); }
+      } else {
+        if (sort) {
+          rows.sort((a, b) => cmpVals(field(a, sort.f), field(b, sort.f)));
+          if (sort.desc) rows.reverse();
+        }
+        if (limit != null) rows = rows.slice(0, limit);
+        const link = (n) => `<a class="wl" href="${url.note(v.id, n.path)}">${esc(n.title)}</a>`;
+        const rexpr = (expr, n) => {
+          if (expr === 'file.link') return link(n);
+          if (!/^[\w.]+$/.test(expr)) throw new Error('unsupported');
+          return cell(v, field(n, expr));
+        };
+        headers = (withoutId ? [] : ['File']).concat(cols.map((c) => esc(c.label)));
+        body = rows.map((n) => (withoutId ? [] : [link(n)]).concat(cols.map((c) => rexpr(c.expr, n))));
+      }
+      if (!body.length) return '<div class="dv-note">Nothing here right now.</div>';
+      return `<div class="table-wrap"><table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${
+        body.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------- views
+  const main = () => $('#main');
+  function fmtDate(iso) {
+    const d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // Wrap a heading's text (not its leading emoji) in the gradient span.
+  function gradTitle(h) {
+    if (!h) return;
+    const m = /^((?:\p{Extended_Pictographic}|\uFE0F|\u200D)+\s*)/u.exec(h.textContent);
+    const lead = m ? m[1] : '';
+    const rest = h.innerHTML.slice(h.innerHTML.indexOf(lead.trim()) + lead.trim().length).trim();
+    h.innerHTML = (lead ? `<span class="emo">${esc(lead.trim())}</span> ` : '') + `<span class="gt">${lead ? rest : h.innerHTML}</span>`;
+  }
+
+  function renderHub() {
+    setProject(null, null);
+    document.title = 'Notebooks';
+    const cards = PROJECTS.map((p) => `
+      <a class="proj-card" href="${url.project(p.id)}" style="--pl:${esc(p.accent)};--pad:${esc(p.accentDark)}">
+        <div class="pe">${p.emoji}</div><i class="pglow"></i>
+        <h2>${esc(p.title)}</h2>
+        <p>${esc(p.tagline)}</p>
+        <span class="go">Open →</span>
+      </a>`).join('');
+    main().innerHTML = `<section class="hub">
+        <div class="eyebrow">Welcome back</div>
+        <h1><span class="gt">Our notebooks</span></h1>
+        <p>Pick one to browse. Check off items as you go; checkmarks are saved on this device.</p>
+        <div class="proj-cards">${cards || '<p>No notebooks published yet.</p>'}</div>
+        <div class="hub-foot">
+          <button class="btn ghost" id="hubLock">🔒 Lock this device</button>
+          <span>Updated ${PROJECTS.map((p) => esc(p.title) + ' ' + fmtDate(p.built)).join(' · ')}</span>
+        </div>
+      </section>`;
+    $('#hubLock').addEventListener('click', lockNow);
+    window.scrollTo(0, 0);
+  }
+
+  function renderNote(v, n, params, isHome) {
+    const pid = v.id;
+    if (!n) {
+      main().innerHTML = `<div class="page"><h1>Not found</h1><p>That note isn't in this notebook. <a href="${url.project(pid)}">Go home</a></p></div>`;
+      return;
+    }
+    const crumbs = n.dir ? n.dir.split('/').map((s) => `<span>${esc(prettyDir(s))}</span>`).join('<span>›</span>') : '';
+    const tags = [].concat(n.fm.tags || []).filter(Boolean);
+    const props = isHome ? [] : Object.entries(n.fm).filter(([k, x]) => !['tags', 'updated', 'type'].includes(k) && truthy(x));
+    const tools = isHome && v.tools && v.tools.length ? `<div class="tool-cards">${v.tools.map((t) => `
+        <a class="tool-card" href="${url.tool(pid, t.id)}"><span class="ti">${t.icon}</span><b>${esc(t.title)}</b><span>${esc(t.blurb || '')}</span></a>`).join('')}</div>` : '';
+    // site.json noteButtons: [{ folder, exclude?, tool, param, label }] puts a button on matching notes
+    // that opens the tool with ?<param>=<note title>; the tool reads it from window.NB_PARAMS.
+    const noteBtns = isHome ? [] : (v.noteButtons || []).filter((b) => (n.dir === b.folder || (n.dir || '').startsWith(b.folder + '/'))
+      && !(b.exclude || []).includes(n.title) && (v.tools || []).some((t) => t.id === b.tool));
+    const btns = noteBtns.length ? `<div class="btn-row note-btns">${noteBtns.map((b) =>
+      `<a class="btn" href="${url.tool(pid, b.tool, enc(b.param) + '=' + enc(n.title))}">${esc(b.label)}</a>`).join('')}</div>` : '';
+    main().innerHTML = `<article class="page">
+        ${crumbs ? `<div class="crumbs">${crumbs}</div>` : ''}
+        <header class="note-head"></header>
+        <div class="meta">${n.fm.updated ? `<span>Updated ${esc(n.fm.updated)}</span>` : ''}${tags.map((t) => `<span class="chip">#${esc(t)}</span>`).join('')}</div>
+        ${props.length ? `<details class="props"><summary>Properties</summary><dl>${props.map(([k, x]) => `<dt>${esc(k)}</dt><dd>${cell(v, x)}</dd>`).join('')}</dl></details>` : ''}
+        ${tools}${btns}
+        <div class="progress-host"></div>
+        <div class="past-host"></div>
+        <div class="md">${renderMarkdown(v, n)}</div>
+        <div class="foot">${esc(cur.proj.title)} · published ${fmtDate(v.built)} · read-only copy; checkmarks save on this device</div>
+      </article>`;
+    const md = $('.md', main());
+    const first = md.firstElementChild;
+    const head = $('.note-head', main());
+    if (first && first.tagName === 'H1') head.appendChild(first);
+    else head.innerHTML = `<h1>${esc(n.title)}</h1>`;
+    gradTitle($('h1', head));
+    if (!$('.meta', main()).children.length) $('.meta', main()).remove();
+    enhance(v, n, md, { progressHost: $('.progress-host', main()) });
+    const past = hidePast(n, md, $('.past-host', main()));
+    document.title = (isHome ? v.title : n.title + ' · ' + v.title);
+    markActive(isHome ? `[data-path="${CSS.escape(v.homeNote.path)}"]` : `[data-path="${CSS.escape(n.path)}"]`);
+
+    const hl = params.get('hl');
+    const h = params.get('h');
+    let target = h ? document.getElementById(h) : null;
+    if (hl) target = highlight(md, hl) || target;
+    // A jump or search hit inside a hidden past item shows past events for this view only.
+    if (past && target && target.closest('.past-ev')) past.show(true, false);
+    if (target) requestAnimationFrame(() => target.scrollIntoView({ block: h && !hl ? 'start' : 'center' }));
+    else window.scrollTo(0, 0);
+  }
+
+  // ---------------------------------------------------------------- past events
+  // Hides list items and table rows whose events have all ended (latest end date < today),
+  // plus headings, tables and callouts left empty by that. Recurring items, undated items
+  // and dates in "(verified …)"-style asides never count. Log/ and Plans/ are history: skipped.
+  const MONTHS = 'Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?';
+  const PDAY = '(?:\\d{1,2})(?:st|nd|rd|th)?(?!\\d|:\\d|\\s?[ap]\\.?m\\b)';
+  const PSPAN = PDAY + '(?:\\s*(?:-|–|—|to|through|thru)\\s*' + PDAY + ')?';
+  const DATE_RE = new RegExp(
+    '\\b(?:(' + MONTHS + ')\\.?\\s+(?:(20\\d{2})\\b|(' + PSPAN + '(?:\\s*(?:,\\s*and|,|&|and)\\s*' + PSPAN + ')*)(?:(?:,\\s*|\\s+)(20\\d{2})\\b)?)' +
+    '|(20\\d{2})-(\\d{2})-(\\d{2})\\b)', 'g');
+  const ASIDE_RE = /\((?:verified|researched|checked|as of|updated|added|last)\b[^()]*\)|\(\s*20\d{2}-\d{2}-\d{2}\s*\)/gi; // also a bare "(2026-09-27)" stamp
+  const ASIDE_BEFORE = /\b(?:verified|confirmed|researched|checked|as of|updated|added|asked|requested|learned|noted|logged|decided|last|previous(?:ly)?|prior|earlier|est|established|founded|since|on sale|sales?|registration|deadline|availab\w*|release[sd]?|premiered|aired)\b(?:[\s.:,]+[\w']+){0,2}?[\s.:,]*(?:on\s+)?$/i;
+  // A date after one of these is a start with no known end ("from Oct 1"): unsure, so it can't hide.
+  const OPEN_BEFORE = /\b(?:from|starting|starts|started|begins|beginning|began|opens|opened|reopens|after)[\s:,]*(?:on\s+)?$/i;
+  // Items that say the real dates aren't known yet stay put even if they mention an old date.
+  const PENDING_RE = /\b(?:no dates? yet|dates? (?:are |is )?(?:not (?:yet )?(?:posted|announced|set|listed)|TBA|TBD)|season (?:is |listed as )?(?:not (?:yet )?(?:posted|announced|confirmed)|TBA|TBD)|year (?:unverified|unknown|unconfirmed)|calendar)\b/i; // "calendar": a source listing that cites example dates
+  const RECUR_RE = /\b(?:every|each|weekly|monthly|quarterly|annually|yearly|nightly|daily|biweekly|bi-?annual(?:ly)?|semi-?annual(?:ly)?|recurring|weeknights|weekends|year-round|ongoing|(?:mon|tues|wednes|thurs|fri|satur|sun)days|(?:1st|2nd|3rd|4th|5th|first|second|third|fourth|fifth|last) (?:mon|tue|wed|thu|fri|sat|sun)\w*)\b/i;
+  const LEAD_DATE = new RegExp('^[^A-Za-z0-9]*(?:(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\\w*\\.?,?\\s+)?(?:(?:' + MONTHS + ')\\.?\\s+\\d|20\\d{2}-\\d{2}-\\d{2})');
+  const monthIdx = (s) => ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(s.slice(0, 3).toLowerCase());
+  const ymd = (y, m, d) => y * 10000 + (m + 1) * 100 + d;
+
+  // Latest end date in the text as yyyymmdd, or null if there's none (or it can't be pinned down).
+  function latestEnd(text, updated) {
+    text = text.replace(/https?:\/\/\S+/g, ' ').replace(ASIDE_RE, ' ');
+    const toks = [];
+    let skipEnd = -1; // end of an ignored date, so its range tail ("on sale Aug 17-Oct 11") is ignored too
+    DATE_RE.lastIndex = 0;
+    for (let m; (m = DATE_RE.exec(text));) {
+      const tail = skipEnd >= 0 && /^\s*(?:-|–|—|to|through|thru)\s*$/.test(text.slice(skipEnd, m.index));
+      if (tail || ASIDE_BEFORE.test(text.slice(Math.max(0, m.index - 30), m.index))) { skipEnd = m.index + m[0].length; continue; }
+      skipEnd = -1;
+      const open = OPEN_BEFORE.test(text.slice(Math.max(0, m.index - 20), m.index));
+      if (m[5]) { toks.push({ y: +m[5], m: +m[6] - 1, d: +m[7], open }); continue; }
+      const mo = monthIdx(m[1]);
+      // Month + year only ("Sept 2027"): counts to the end of that month, but can't hide an item alone.
+      if (m[2]) { toks.push({ y: +m[2], m: mo, d: new Date(+m[2], mo + 1, 0).getDate(), vague: true }); continue; }
+      const days = (m[3].match(/\d{1,2}/g) || []).map(Number).filter((x) => x >= 1 && x <= 31);
+      if (!days.length) continue;
+      toks.push({ y: m[4] ? +m[4] : null, m: mo, d: Math.max(...days), open, ord: /\d(?:st|nd|rd|th)\b/.test(m[3]) });
+    }
+    if (!toks.length || toks.every((t) => t.vague)) return null;
+    const bare = Math.max(0, ...(text.match(/\b20\d{2}\b/g) || []).map(Number));
+    let best = 0, bestOpen = false;
+    for (let i = 0; i < toks.length; i++) {
+      const t = toks[i];
+      if (t.y == null) {
+        const later = toks.slice(i + 1).find((x) => x.y != null);
+        if (later) t.y = t.m > later.m ? later.y - 1 : later.y;
+        else if (t.ord) continue; // "July 4th" with no year reads as a holiday name, not an event date
+        else if (updated) {
+          t.y = updated.getFullYear();
+          if (new Date(t.y, t.m, t.d) < new Date(updated.getTime() - 150 * 864e5)) t.y++;
+          // A yearless date that would fall before the note was written, in an item naming a later
+          // year ("verify exact 2027 event details"), means that year.
+          if (bare > t.y && new Date(t.y, t.m, t.d) < updated) t.y = bare;
+        } else return null; // unsure: don't hide
+      }
+      const v = ymd(t.y, t.m, t.d);
+      if (v > best) { best = v; bestOpen = !!t.open; } else if (v === best && !t.open) bestOpen = false;
+    }
+    return best && !bestOpen ? best : null;
+  }
+
+  function hidePast(n, md, host) {
+    if (/^(Log|Plans|About Us)\//i.test(n.path)) return null; // history and profile notes keep every dated line
+    const um = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(n.fm.updated || ''));
+    const updated = um ? new Date(+um[1], +um[2] - 1, +um[3]) : null;
+    const now = new Date();
+    const today = ymd(now.getFullYear(), now.getMonth(), now.getDate());
+    const isPast = (text) => {
+      text = text.replace(/https?:\/\/\S+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (RECUR_RE.test(text) && !LEAD_DATE.test(text)) return false;
+      if (PENDING_RE.test(text)) return false;
+      const end = latestEnd(text, updated);
+      return end != null && end < today;
+    };
+    let count = 0;
+    // Deepest first, so a parent with a still-upcoming sublist stays.
+    $$('li', md).reverse().forEach((li) => {
+      if (li.closest('pre')) return;
+      if ($$(':scope > ul > li, :scope > ol > li', li).some((c) => !c.classList.contains('past-ev'))) return;
+      const c = li.cloneNode(true);
+      $$('ul, ol', c).forEach((x) => x.remove());
+      if (isPast(c.textContent)) { li.classList.add('past-ev'); count++; }
+    });
+    $$('tbody tr', md).forEach((tr) => {
+      if (isPast($$('td, th', tr).map((x) => x.textContent).join(' | '))) { tr.classList.add('past-ev'); count++; }
+    });
+    if (!count) return null;
+
+    const visible = (el) => {
+      if (el.classList.contains('past-ev')) return false;
+      if (/^H[1-6]$/.test(el.tagName)) return true;
+      if (el.tagName === 'UL' || el.tagName === 'OL') return $$(':scope > li', el).some((li) => !li.classList.contains('past-ev'));
+      if (el.matches('.table-wrap, table')) { const rows = $$('tbody tr', el); return !rows.length || rows.some((r) => !r.classList.contains('past-ev')); }
+      if (el.tagName === 'HR') return false;
+      if (el.classList.contains('callout')) return [...$('.callout-body', el).children].some(visible);
+      return !!el.textContent.trim() || !!$('img, iframe, video', el);
+    };
+    // Tables and callouts left with nothing visible.
+    $$('.table-wrap', md).forEach((w) => { if ($('tbody tr.past-ev', w) && !visible(w)) w.classList.add('past-ev'); });
+    $$('.callout', md).forEach((c) => { if ($('.past-ev', c) && !visible(c)) c.classList.add('past-ev'); });
+    // Headings whose section is now empty, deepest level first.
+    for (let lvl = 6; lvl >= 2; lvl--) {
+      $$(':scope > h' + lvl, md).forEach((h) => {
+        const sec = [];
+        for (let s = h.nextElementSibling; s && !(/^H[1-6]$/.test(s.tagName) && +s.tagName[1] <= lvl); s = s.nextElementSibling) sec.push(s);
+        const hadPast = sec.some((s) => s.classList.contains('past-ev') || $('.past-ev', s));
+        if (hadPast && !sec.some(visible)) h.classList.add('past-ev');
+      });
+    }
+
+    host.innerHTML = `<div class="past-bar" role="status"><span>🕰️ <span data-past-label></span></span><span aria-hidden="true">·</span><button type="button" data-past-toggle></button></div>`;
+    const label = $('[data-past-label]', host), btn = $('[data-past-toggle]', host);
+    const noun = count === 1 ? 'past event' : 'past events';
+    const show = (on, persist) => {
+      md.classList.toggle('show-past', on);
+      label.textContent = `${count} ${noun} ${on ? 'shown' : 'hidden'}`;
+      btn.textContent = on ? 'Hide past events' : 'Show them';
+      btn.setAttribute('aria-pressed', String(on));
+      if (persist) store.set('nb:showPast', on);
+    };
+    btn.addEventListener('click', () => show(!md.classList.contains('show-past'), true));
+    show(!!store.get('nb:showPast', false), false);
+    return { count, show };
+  }
+
+  function highlight(root, q) {
+    const terms = q.toLowerCase().split(/\s+/).filter((t) => t.length > 1);
+    if (!terms.length) return null;
+    const re = new RegExp('(' + terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) if (re.test(walker.currentNode.nodeValue)) nodes.push(walker.currentNode);
+    let first = null;
+    nodes.forEach((t) => {
+      const span = document.createElement('span');
+      span.innerHTML = esc(t.nodeValue).replace(re, '<mark>$1</mark>');
+      const marks = $$('mark', span);
+      if (!first && marks.length) first = marks[0];
+      t.replaceWith(...span.childNodes);
+    });
+    return first;
+  }
+
+  function renderTool(v, id, params) {
+    const t = (v.tools || []).find((x) => x.id === id);
+    if (!t) return renderNote(v, null);
+    document.title = t.title + ' · ' + v.title;
+    markActive(`[data-tool="${CSS.escape(id)}"]`);
+    if (t.ics) {
+      const webcal = t.ics.replace(/^https?:/, 'webcal:');
+      main().innerHTML = `<article class="page">
+          <div class="note-head"><h1><span class="emo">${t.icon}</span> <span class="gt">${esc(t.title)}</span></h1></div>
+          <div class="md">
+            <p>Every event the calendar finder picks up, refreshed weekly. Subscribe once and it stays up to date on your phone.</p>
+            <div class="btn-row">
+              <a class="btn" href="https://calendar.google.com/calendar/r?cid=${enc(webcal)}" target="_blank" rel="noopener">Add to Google Calendar</a>
+              <a class="btn ghost" href="${esc(webcal)}">iPhone / Apple Calendar</a>
+            </div>
+            <p>Or copy the link and add it by URL (Google Calendar → Other calendars → + → From URL):</p>
+            <div class="copy-row"><input readonly value="${esc(t.ics)}" aria-label="Calendar link"><button class="btn ghost" id="copyIcs">Copy</button></div>
+            ${v.byTitle.get('upcoming') ? `<p>Prefer a list? See ${wikilink(v, v.homeNote, 'Upcoming')}.</p>` : ''}
+          </div></article>`;
+      $('#copyIcs').addEventListener('click', async () => {
+        const inp = $('.copy-row input');
+        try { await navigator.clipboard.writeText(inp.value); } catch (e) { inp.select(); document.execCommand('copy'); }
+        $('#copyIcs').textContent = 'Copied ✓';
+      });
+      window.scrollTo(0, 0);
+      return;
+    }
+    main().innerHTML = `<div class="tool-frame">
+        <div class="tool-bar"><span>${t.icon}</span><b>${esc(t.title)}</b></div>
+        <iframe title="${esc(t.title)}"></iframe></div>`;
+    const nbParams = JSON.stringify(Object.fromEntries(params || [])).replace(/</g, '\\u003c');
+    $('iframe', main()).srcdoc = t.html.replace(/<html\b[^>]*>/i, (m) => m.replace(/\sdata-theme="[^"]*"/, '').replace(/>$/, ` data-theme="${theme()}">`))
+      .replace(/<head\b[^>]*>/i, (m) => `${m}<script>window.NB_PARAMS=${nbParams};<\/script>`);
+  }
+
+  function renderSearch(v, q) {
+    const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+    document.title = 'Search · ' + v.title;
+    markActive(null);
+    if ($('#q').value !== q && document.activeElement !== $('#q')) $('#q').value = q;
+    if (!terms.length) {
+      main().innerHTML = '<div class="page"><h1>Search</h1><p class="count">Type in the search box above.</p></div>';
+      return;
+    }
+    const clean = (s) => s.replace(/\[\[([^\]|]+)\|?([^\]]*)\]\]/g, (m, a, b) => b || a).replace(/[*_`#>]|^\s*-\s*\[.\]\s*|^\s*[-+]\s+/g, '').trim();
+    const re = new RegExp('(' + terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+    const results = [];
+    for (const n of v.notes) {
+      const hay = (n.title + '\n' + n.body).toLowerCase();
+      if (!terms.every((t) => hay.includes(t))) continue;
+      const tl = n.title.toLowerCase();
+      let score = terms.reduce((a, t) => a + (tl.includes(t) ? 50 : 0) + Math.min(hay.split(t).length - 1, 20), 0);
+      const lines = n.body.split('\n').filter((l) => terms.some((t) => l.toLowerCase().includes(t)) && clean(l) && clean(l) !== n.title).slice(0, 3);
+      results.push({ n, score, lines });
+    }
+    results.sort((a, b) => b.score - a.score);
+    main().innerHTML = `<div class="page">
+        <div class="note-head"><h1>“${esc(q)}”</h1></div>
+        <p class="count">${results.length} note${results.length === 1 ? '' : 's'}</p>
+        <ul class="results">${results.map((r) => `<li>
+          <a class="rt" href="${url.note(v.id, r.n.path, 'hl=' + enc(q))}">${esc(r.n.title)}</a>
+          ${r.n.dir ? `<div class="rp">${esc(r.n.dir.split('/').map(prettyDir).join(' › '))}</div>` : ''}
+          ${r.lines.map((l) => `<div class="rs">${esc(clean(l).slice(0, 220)).replace(re, '<mark>$1</mark>')}</div>`).join('')}
+        </li>`).join('')}</ul></div>`;
+    window.scrollTo(0, 0);
+  }
+
+  let searchTimer = null;
+  $('#q').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      if (!cur) return;
+      const q = $('#q').value.trim();
+      const target = q ? url.search(cur.v.id, q) : url.project(cur.v.id);
+      if (parseRoute().kind === 's') location.replace(target); else location.hash = target;
+    }, 220);
+  });
+  $('#searchForm').addEventListener('submit', (e) => { e.preventDefault(); $('#q').blur(); });
+
+  // Tool pages (inside the iframe) can ask to open a note: postMessage({ openNote: "Title" }),
+  // optionally at a heading: postMessage({ openNote: "Title", heading: "Heading text or id" }).
+  // They can also open another tool: postMessage({ openTool: "<site.json tool id>" }), with optional
+  // params (e.g. { story: "Title" }, passed on as window.NB_PARAMS) and fallbackNote ("Title", opened
+  // instead when this notebook has no such tool).
+  window.addEventListener('message', (e) => {
+    if (!cur || !e.data) return;
+    const d = e.data;
+    if (typeof d.openNote !== 'string' && typeof d.openTool !== 'string') return;
+    const f = $('#main iframe');
+    if (!f || e.source !== f.contentWindow) return;
+    if (typeof d.openTool === 'string') {
+      if ((cur.v.tools || []).some((t) => t.id === d.openTool)) {
+        const p = d.params && typeof d.params === 'object'
+          ? Object.entries(d.params).filter(([, x]) => typeof x === 'string' || typeof x === 'number')
+            .map(([k, x]) => enc(k) + '=' + enc(x)).join('&') : '';
+        location.hash = url.tool(cur.v.id, d.openTool, p);
+        return;
+      }
+      if (typeof d.fallbackNote !== 'string') return;
+    }
+    const n = resolve(cur.v, typeof d.openNote === 'string' ? d.openNote : d.fallbackNote);
+    const hid = typeof d.heading === 'string' ? slug(d.heading) : '';
+    if (n) location.hash = url.note(cur.v.id, n.path, hid ? 'h=' + enc(hid) : '');
+  });
+
+  // ---------------------------------------------------------------- router
+  async function route() {
+    closeNav();
+    const r = parseRoute();
+    const proj = PROJECTS.find((p) => p.id === r.pid);
+    if (!proj) return renderHub();
+    let v = VAULTS[proj.id];
+    if (!v) {
+      setProject(proj, null);
+      main().innerHTML = '<div class="loading"><div class="spinner"></div>Opening ' + esc(proj.title) + '…</div>';
+      try {
+        v = await loadVault(proj.id);
+      } catch (err) {
+        if (err && err.name === 'OperationError') { store.del('nb:key'); return showLock('The passphrase has changed. Please enter it again.'); }
+        main().innerHTML = `<div class="page"><h1>Couldn't open ${esc(proj.title)}</h1><p>${esc(err.message || err)}</p><p><a href="${location.hash}" onclick="location.reload()">Try again</a></p></div>`;
+        return;
+      }
+      if (parseRoute().pid !== proj.id) return; // navigated away meanwhile
+    }
+    setProject(proj, v);
+    main().classList.toggle('full', r.kind === 't');
+    if (r.kind !== 's' && document.activeElement !== $('#q')) $('#q').value = '';
+    if (r.kind === 'n') renderNote(v, resolve(v, r.rest), r.params, false);
+    else if (r.kind === 't') renderTool(v, r.rest, r.params);
+    else if (r.kind === 's') renderSearch(v, r.params.get('q') || '');
+    else renderNote(v, v.homeNote, r.params, true);
+  }
+
+  function start() {
+    $('#lock').hidden = true;
+    $('#app').hidden = false;
+    window.addEventListener('hashchange', route);
+    route();
+  }
+
+  async function boot() {
+    applyTheme();
+    if (!window.crypto || !crypto.subtle || !window.DecompressionStream) {
+      return showLock('This browser is too old to open the notebooks. Try an up-to-date Safari, Chrome or Firefox.');
+    }
+    try {
+      PROJECTS = await (await fetch('projects.json', { cache: 'no-cache' })).json();
+    } catch (e) {
+      PROJECTS = [];
+    }
+    const saved = store.get('nb:key');
+    if (saved) {
+      try {
+        KEY = await crypto.subtle.importKey('raw', b64dec(saved), 'AES-GCM', true, ['decrypt']);
+        await verifyKey(KEY);
+        return start();
+      } catch (err) {
+        if (err && err.name === 'OperationError') { store.del('nb:key'); KEY = null; }
+        else if (KEY) return start(); // offline or a hiccup: keep the key, let the page show the error
+      }
+    }
+    showLock();
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
