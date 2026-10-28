@@ -1295,7 +1295,7 @@ body::after {
         <iframe title="${esc(t.title)}"></iframe></div>`;
     const nbParams = JSON.stringify(Object.fromEntries(params || [])).replace(/</g, '\\u003c');
     $('iframe', main()).srcdoc = t.html.replace(/<html\b[^>]*>/i, (m) => m.replace(/\sdata-theme="[^"]*"/, '').replace(/>$/, ` data-theme="${theme()}">`))
-      .replace(/<head\b[^>]*>/i, (m) => `${m}<script>window.NB_PARAMS=${nbParams};<\/script>`);
+      .replace(/<head\b[^>]*>/i, (m) => `${m}<script>window.NB_PARAMS=${nbParams};window.NB_RESTORED=${!!window.NB_RESTORED};<\/script>`);
   }
 
   function renderSearch(v, q) {
@@ -1396,11 +1396,46 @@ body::after {
     else renderNote(v, v.homeNote, r.params, true);
   }
 
+  // ---------------------------------------------------------------- place memory
+  // Phones kill a backgrounded app, and the relaunch opens at the start page. Remember the page
+  // and scroll position (per app path: the main app and date/ are separate) and put them back.
+  const LAST = 'nb:last:' + location.pathname;
+  const FRESH_MS = 24 * 3600e3;
+  let restoreY = null, scrollTimer = null;
+  window.NB_RESTORED = false;
+  function saveLast() {
+    if (restoreY != null) return; // don't overwrite the saved spot before it's put back
+    store.set(LAST, { h: location.hash, y: Math.round(window.scrollY), at: Date.now() });
+  }
+  function restoreScroll() {
+    if (restoreY == null) return;
+    const y = restoreY;
+    const put = () => { if (restoreY != null) window.scrollTo(0, y); };
+    requestAnimationFrame(put);
+    setTimeout(() => { put(); restoreY = null; saveLast(); }, 450);
+  }
+  function planRestore() {
+    let alive = false;
+    try { alive = !!sessionStorage.getItem('nb:alive'); sessionStorage.setItem('nb:alive', '1'); } catch (e) { /* ignore */ }
+    const last = store.get(LAST);
+    if (!last || !last.h || Date.now() - last.at > FRESH_MS) return;
+    const startPage = /^#?\/?(dates)?$/.test(location.hash);
+    if (!alive && startPage && last.h !== location.hash) {
+      history.replaceState(null, '', last.h);
+    }
+    // Same page as when we left: put the scroll back, and tell a tool page it may reopen its own spot.
+    if (last.h === location.hash) { restoreY = last.y || 0; window.NB_RESTORED = true; }
+  }
+
   function start() {
     $('#lock').hidden = true;
     $('#app').hidden = false;
-    window.addEventListener('hashchange', route);
-    route();
+    planRestore();
+    window.addEventListener('hashchange', () => { restoreY = null; window.NB_RESTORED = false; route().then(saveLast); });
+    window.addEventListener('scroll', () => { clearTimeout(scrollTimer); scrollTimer = setTimeout(saveLast, 300); }, { passive: true });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveLast(); });
+    window.addEventListener('pagehide', saveLast);
+    route().then(restoreScroll);
   }
 
   async function boot() {
