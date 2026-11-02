@@ -426,10 +426,6 @@ body::after {
 </head>
 <body>
 
-<div id="booting" class="lock" hidden>
-  <div class="loading"><div class="spinner"></div>Opening your notebooks…<div id="bootSlow" hidden>The latest version is still downloading. On a slow connection this can take a couple of minutes.</div></div>
-</div>
-
 <div id="lock" class="lock" hidden>
   <form class="lock-card" id="lockForm" autocomplete="on">
     <div class="lock-emoji">📚</div>
@@ -493,15 +489,87 @@ body::after {
       base, { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
   }
 
-  async function loadVault(pid, key = KEY) {
-    if (VAULTS[pid]) return VAULTS[pid];
+  async function decryptText(buf, key) {
+    if (new TextDecoder().decode(buf.subarray(0, 4)) !== MAGIC) throw new Error('unexpected file format');
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.subarray(4, 16) }, key, buf.subarray(16));
+    return new Response(new Blob([plain]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  }
+
+  // Encrypted files are kept in the Cache API, so a notebook opens from this device and
+  // updates in the background. The network only blocks the very first open of a file.
+  const CACHE_NAME = 'nb-files-v1';
+  const cacheUrl = (name) => location.origin + '/nb-files/' + name;
+  async function fileCache() {
+    try { return await caches.open(CACHE_NAME); } catch (e) { return null; }
+  }
+  async function cachePut(c, name, buf, version) {
+    if (!c) return;
+    try {
+      await c.put(cacheUrl(name), new Response(buf, { headers: { 'x-nb-version': version || '' } }));
+    } catch (e) { /* storage full or blocked: the network copy still works */ }
+  }
+  const fileVersion = (res) => res.headers.get('etag') || res.headers.get('last-modified') || '';
+
+  async function downloadVault(pid, c, key) {
     const res = await fetch(pid + '/vault.bin', { cache: 'no-cache' });
     if (!res.ok) throw new Error('download failed (' + res.status + ')');
     const buf = new Uint8Array(await res.arrayBuffer());
-    if (new TextDecoder().decode(buf.subarray(0, 4)) !== MAGIC) throw new Error('unexpected file format');
-    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.subarray(4, 16) }, key, buf.subarray(16));
-    const text = await new Response(new Blob([plain]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-    return (VAULTS[pid] = prepVault(JSON.parse(text)));
+    const v = prepVault(JSON.parse(await decryptText(buf, key)));
+    await cachePut(c, pid + '/vault.bin', buf, fileVersion(res));
+    return v;
+  }
+  async function refreshVault(pid, c, version, key) {
+    try {
+      const res = await fetch(pid + '/vault.bin', { cache: 'no-cache' });
+      if (!res.ok || (version && fileVersion(res) === version)) return;
+      const buf = new Uint8Array(await res.arrayBuffer());
+      const v = prepVault(JSON.parse(await decryptText(buf, key)));
+      await cachePut(c, pid + '/vault.bin', buf, fileVersion(res));
+      if (key === KEY) VAULTS[pid] = v; // used from the next navigation; the open page isn't disturbed
+    } catch (err) {
+      if (err && err.name === 'OperationError' && key === KEY) {
+        store.del('nb:key');
+        showLock('The passphrase has changed. Please enter it again.');
+      } // otherwise offline or a hiccup: keep the saved copy and try again next launch
+    }
+  }
+  async function loadVault(pid, key = KEY) {
+    if (VAULTS[pid]) return VAULTS[pid];
+    const c = await fileCache();
+    const saved = c && await c.match(cacheUrl(pid + '/vault.bin'));
+    if (saved) {
+      try {
+        const version = saved.headers.get('x-nb-version');
+        const v = prepVault(JSON.parse(await decryptText(new Uint8Array(await saved.arrayBuffer()), key)));
+        refreshVault(pid, c, version, key);
+        return (VAULTS[pid] = v);
+      } catch (e) { /* saved copy unusable with this key: fall through to the network */ }
+    }
+    return (VAULTS[pid] = await downloadVault(pid, c, key));
+  }
+
+  // Each tool is its own encrypted file with its content hash in the name, fetched only when opened.
+  async function loadToolHtml(pid, t) {
+    const name = pid + '/' + t.file;
+    const c = await fileCache();
+    const saved = c && await c.match(cacheUrl(name));
+    let buf;
+    if (saved) {
+      buf = new Uint8Array(await saved.arrayBuffer());
+    } else {
+      const res = await fetch(name);
+      if (!res.ok) throw new Error('download failed (' + res.status + ')');
+      buf = new Uint8Array(await res.arrayBuffer());
+    }
+    const html = await decryptText(buf, KEY);
+    if (!saved && c) {
+      await cachePut(c, name, buf);
+      const prefix = cacheUrl(pid + '/tools/' + t.id + '-');
+      for (const req of await c.keys()) {
+        if (req.url.startsWith(prefix) && req.url !== cacheUrl(name)) await c.delete(req);
+      }
+    }
+    return html;
   }
 
   // ---------------------------------------------------------------- vault model
@@ -1293,6 +1361,18 @@ body::after {
       window.scrollTo(0, 0);
       return;
     }
+    if (t.html == null) {
+      const here = location.hash;
+      main().innerHTML = '<div class="loading"><div class="spinner"></div>Opening ' + esc(t.title) + '…</div>';
+      loadToolHtml(v.id, t).then((html) => {
+        t.html = html;
+        if (location.hash === here) renderTool(v, id, params);
+      }).catch((err) => {
+        if (location.hash !== here) return;
+        main().innerHTML = `<div class="page"><h1>Couldn't open ${esc(t.title)}</h1><p>${esc(err.message || err)}</p><p><a href="${here}" onclick="location.reload()">Try again</a></p></div>`;
+      });
+      return;
+    }
     main().innerHTML = `<div class="tool-frame">
         <div class="tool-bar"><span>${t.icon}</span><b>${esc(t.title)}</b></div>
         <iframe title="${esc(t.title)}"></iframe></div>`;
@@ -1446,26 +1526,32 @@ body::after {
     if (!window.crypto || !crypto.subtle || !window.DecompressionStream) {
       return showLock('This browser is too old to open the notebooks. Try an up-to-date Safari, Chrome or Firefox.');
     }
-    try {
-      PROJECTS = await (await fetch('projects.json', { cache: 'no-cache' })).json();
-    } catch (e) {
-      PROJECTS = [];
+    const fetchProjects = async () => {
+      const list = await (await fetch('projects.json', { cache: 'no-cache' })).json();
+      store.set('nb:projects', list);
+      return list;
+    };
+    const knownProjects = store.get('nb:projects');
+    if (knownProjects && knownProjects.length) {
+      PROJECTS = knownProjects;
+      fetchProjects().then((list) => { PROJECTS = list; }).catch(() => {});
+    } else {
+      try {
+        PROJECTS = await fetchProjects();
+      } catch (e) {
+        PROJECTS = [];
+      }
     }
     const saved = store.get('nb:key');
     if (saved) {
-      // verifyKey downloads a whole vault, so show progress rather than a bare background.
-      $('#booting').hidden = false;
-      const slowTimer = setTimeout(() => { $('#bootSlow').hidden = false; }, 5000);
+      // Never wait on a vault here: startup must not depend on how much content exists.
+      // A key that no longer works is caught when a vault is opened or refreshed.
       try {
         KEY = await crypto.subtle.importKey('raw', b64dec(saved), 'AES-GCM', true, ['decrypt']);
-        await verifyKey(KEY);
         return start();
       } catch (err) {
-        if (err && err.name === 'OperationError') { store.del('nb:key'); KEY = null; }
-        else if (KEY) return start(); // offline or a hiccup: keep the key, let the page show the error
-      } finally {
-        clearTimeout(slowTimer);
-        $('#booting').hidden = true;
+        store.del('nb:key');
+        KEY = null;
       }
     }
     showLock();
