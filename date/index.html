@@ -427,6 +427,10 @@ body::after {
 </head>
 <body>
 
+<div id="booting" class="lock" hidden>
+  <div class="loading"><div class="spinner"></div>Opening your notebooks…<div id="bootSlow" hidden>The latest version is still downloading. On a slow connection this can take a couple of minutes.</div></div>
+</div>
+
 <div id="lock" class="lock" hidden>
   <form class="lock-card" id="lockForm" autocomplete="on">
     <div class="lock-emoji">📚</div>
@@ -1450,6 +1454,9 @@ body::after {
     }
     const saved = store.get('nb:key');
     if (saved) {
+      // verifyKey downloads a whole vault, so show progress rather than a bare background.
+      $('#booting').hidden = false;
+      const slowTimer = setTimeout(() => { $('#bootSlow').hidden = false; }, 5000);
       try {
         KEY = await crypto.subtle.importKey('raw', b64dec(saved), 'AES-GCM', true, ['decrypt']);
         await verifyKey(KEY);
@@ -1457,6 +1464,9 @@ body::after {
       } catch (err) {
         if (err && err.name === 'OperationError') { store.del('nb:key'); KEY = null; }
         else if (KEY) return start(); // offline or a hiccup: keep the key, let the page show the error
+      } finally {
+        clearTimeout(slowTimer);
+        $('#booting').hidden = true;
       }
     }
     showLock();
