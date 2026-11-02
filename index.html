@@ -307,6 +307,9 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1
 .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 20px; }
 
 .foot { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
+.update-bar { position: sticky; top: var(--topbar); z-index: 5; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 8px 14px; font-size: 14px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+.update-bar button { border: 0; border-radius: 8px; padding: 5px 12px; font-weight: 600; color: #fff; background: var(--accent); cursor: pointer; }
+.sync-pill { position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 50; padding: 5px 11px; font-size: 12px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; pointer-events: none; }
 .loading { padding: 60px 20px; text-align: center; color: var(--muted); }
 .spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 12px; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -426,6 +429,8 @@ body::after {
 </head>
 <body>
 
+<div id="syncPill" class="sync-pill" hidden></div>
+
 <div id="lock" class="lock" hidden>
   <form class="lock-card" id="lockForm" autocomplete="on">
     <div class="lock-emoji">📚</div>
@@ -495,81 +500,191 @@ body::after {
     return new Response(new Blob([plain]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
   }
 
-  // Encrypted files are kept in the Cache API, so a notebook opens from this device and
-  // updates in the background. The network only blocks the very first open of a file.
-  const CACHE_NAME = 'nb-files-v1';
+  // ---------------------------------------------------------------- offline files
+  // A notebook is a small manifest plus one encrypted file per note, tool and story, each named
+  // by a hash of its bytes. Files are saved in the Cache API, so everything works offline, and
+  // sync only downloads the names this device doesn't have. Changing one note fetches one file.
+  const CACHE_NAME = 'nb-files-v2';
   const cacheUrl = (name) => location.origin + '/nb-files/' + name;
-  async function fileCache() {
-    try { return await caches.open(CACHE_NAME); } catch (e) { return null; }
+  let cachePromise = null;
+  function fileCache() {
+    if (!cachePromise) cachePromise = (async () => {
+      try { await caches.delete('nb-files-v1'); return await caches.open(CACHE_NAME); } catch (e) { return null; }
+    })();
+    return cachePromise;
   }
-  async function cachePut(c, name, buf, version) {
+  async function cachePut(name, buf, version) {
+    const c = await fileCache();
     if (!c) return;
     try {
       await c.put(cacheUrl(name), new Response(buf, { headers: { 'x-nb-version': version || '' } }));
     } catch (e) { /* storage full or blocked: the network copy still works */ }
   }
   const fileVersion = (res) => res.headers.get('etag') || res.headers.get('last-modified') || '';
-
-  async function downloadVault(pid, c, key) {
-    const res = await fetch(pid + '/vault.bin', { cache: 'no-cache' });
+  async function downloadFile(pid, file) {
+    const res = await fetch(pid + '/' + file);
     if (!res.ok) throw new Error('download failed (' + res.status + ')');
     const buf = new Uint8Array(await res.arrayBuffer());
-    const v = prepVault(JSON.parse(await decryptText(buf, key)));
-    await cachePut(c, pid + '/vault.bin', buf, fileVersion(res));
-    return v;
+    await cachePut(pid + '/' + file, buf);
+    return buf;
   }
-  async function refreshVault(pid, c, version, key) {
-    try {
-      const res = await fetch(pid + '/vault.bin', { cache: 'no-cache' });
-      if (!res.ok || (version && fileVersion(res) === version)) return;
-      const buf = new Uint8Array(await res.arrayBuffer());
-      const v = prepVault(JSON.parse(await decryptText(buf, key)));
-      await cachePut(c, pid + '/vault.bin', buf, fileVersion(res));
-      if (key === KEY) VAULTS[pid] = v; // used from the next navigation; the open page isn't disturbed
-    } catch (err) {
-      if (err && err.name === 'OperationError' && key === KEY) {
-        store.del('nb:key');
-        showLock('The passphrase has changed. Please enter it again.');
-      } // otherwise offline or a hiccup: keep the saved copy and try again next launch
+  // The text of one file: the saved copy if there is one, otherwise the network.
+  async function readText(pid, file) {
+    const c = await fileCache();
+    const saved = c && await c.match(cacheUrl(pid + '/' + file));
+    if (saved) {
+      try {
+        return await decryptText(new Uint8Array(await saved.arrayBuffer()), KEY);
+      } catch (e) { await c.delete(cacheUrl(pid + '/' + file)); } // damaged copy: fetch it again
     }
+    return decryptText(await downloadFile(pid, file), KEY);
   }
   async function loadVault(pid, key = KEY) {
     if (VAULTS[pid]) return VAULTS[pid];
     const c = await fileCache();
-    const saved = c && await c.match(cacheUrl(pid + '/vault.bin'));
+    const saved = c && await c.match(cacheUrl(pid + '/manifest.bin'));
     if (saved) {
       try {
-        const version = saved.headers.get('x-nb-version');
-        const v = prepVault(JSON.parse(await decryptText(new Uint8Array(await saved.arrayBuffer()), key)));
-        refreshVault(pid, c, version, key);
-        return (VAULTS[pid] = v);
+        return (VAULTS[pid] = prepVault(JSON.parse(await decryptText(new Uint8Array(await saved.arrayBuffer()), key))));
       } catch (e) { /* saved copy unusable with this key: fall through to the network */ }
     }
-    return (VAULTS[pid] = await downloadVault(pid, c, key));
+    const res = await fetch(pid + '/manifest.bin', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('download failed (' + res.status + ')');
+    const buf = new Uint8Array(await res.arrayBuffer());
+    const v = prepVault(JSON.parse(await decryptText(buf, key)));
+    await cachePut(pid + '/manifest.bin', buf, fileVersion(res));
+    return (VAULTS[pid] = v);
   }
+  async function ensureBody(v, n) {
+    if (n.body == null) n.body = parseFrontmatter(await readText(v.id, n.file))[1];
+  }
+  async function pool(items, size, work) {
+    let i = 0;
+    await Promise.all(Array.from({ length: size }, async () => {
+      while (i < items.length) await work(items[i++]);
+    }));
+  }
+  const vaultFiles = (v) => [
+    ...v.notes.map((n) => n.file),
+    ...(v.tools || []).flatMap((t) => [t.file, ...Object.values(t.data || {})]).filter(Boolean),
+  ];
 
-  // Each tool is its own encrypted file with its content hash in the name, fetched only when opened.
-  async function loadToolHtml(pid, t) {
-    const name = pid + '/' + t.file;
-    const c = await fileCache();
-    const saved = c && await c.match(cacheUrl(name));
-    let buf;
-    if (saved) {
-      buf = new Uint8Array(await saved.arrayBuffer());
-    } else {
-      const res = await fetch(name);
-      if (!res.ok) throw new Error('download failed (' + res.status + ')');
-      buf = new Uint8Array(await res.arrayBuffer());
+  // ---------------------------------------------------------------- background sync
+  // The current version stays in use until every file of the new one is saved, then it swaps in
+  // all at once. If the page on screen changed, a button offers the new version.
+  function showSyncPill(text) {
+    const el = $('#syncPill');
+    el.hidden = !text;
+    el.textContent = text || '';
+  }
+  function openPageFile(v) {
+    const r = parseRoute();
+    if (r.pid !== v.id) return null;
+    if (r.kind === 't') {
+      const t = (v.tools || []).find((x) => x.id === r.rest);
+      return t ? (t.file || '') + '|' + ((t.data || {})[r.params.get('story')] || '') : null;
     }
-    const html = await decryptText(buf, KEY);
-    if (!saved && c) {
-      await cachePut(c, name, buf);
-      const prefix = cacheUrl(pid + '/tools/' + t.id + '-');
+    if (r.kind === 's') return null;
+    const n = r.kind === 'n' ? resolve(v, r.rest) : v.homeNote;
+    return n ? n.file : null;
+  }
+  function offerUpdate() {
+    if ($('#updateBar')) return;
+    const bar = document.createElement('div');
+    bar.id = 'updateBar';
+    bar.className = 'update-bar';
+    bar.innerHTML = '<span>A new version of this page is ready.</span><button type="button">Show it</button>';
+    $('button', bar).addEventListener('click', async () => {
+      const y = window.scrollY;
+      await route();
+      window.scrollTo(0, y);
+    });
+    main().prepend(bar);
+  }
+  function activate(pid, next) {
+    const old = VAULTS[pid];
+    if (old) {
+      // Keep text already in memory for every note that didn't change.
+      const bodies = new Map(old.notes.filter((n) => n.body != null).map((n) => [n.file, n.body]));
+      for (const n of next.notes) if (bodies.has(n.file)) n.body = bodies.get(n.file);
+      const pages = new Map((old.tools || []).filter((t) => t.html != null).map((t) => [t.file, t.html]));
+      for (const t of next.tools || []) if (pages.has(t.file)) t.html = pages.get(t.file);
+    }
+    VAULTS[pid] = next;
+    if (old && cur && cur.v === old) {
+      const was = openPageFile(old), now = openPageFile(next);
+      if (was !== null && now !== null && was !== now) offerUpdate();
+    }
+  }
+  async function syncProject(pid, key) {
+    const c = await fileCache();
+    if (!c) return;
+    const res = await fetch(pid + '/manifest.bin', { cache: 'no-cache' });
+    if (!res.ok) return;
+    const version = fileVersion(res);
+    const saved = await c.match(cacheUrl(pid + '/manifest.bin'));
+    const changed = !saved || !version || saved.headers.get('x-nb-version') !== version;
+    let next, buf = null;
+    if (changed) {
+      buf = new Uint8Array(await res.arrayBuffer());
+      next = prepVault(JSON.parse(await decryptText(buf, key)));
+      if (!saved) await cachePut(pid + '/manifest.bin', buf, version); // first run: usable right away
+    } else {
+      next = VAULTS[pid] || prepVault(JSON.parse(await decryptText(new Uint8Array(await saved.arrayBuffer()), key)));
+    }
+    const have = new Set((await c.keys()).map((r) => r.url));
+    const wanted = vaultFiles(next);
+    const missing = wanted.filter((f) => !have.has(cacheUrl(pid + '/' + f)));
+    if (missing.length) {
+      // What's on screen first, then the rest.
+      const first = (openPageFile(next) || '').split('|');
+      missing.sort((a, b) => first.includes(b) - first.includes(a));
+      let done = 0, failed = 0;
+      const pill = () => { if (missing.length > 5) showSyncPill(`Saving for offline: ${done} of ${missing.length}`); };
+      pill();
+      await pool(missing, 8, async (f) => {
+        try { await downloadFile(pid, f); } catch (e) { failed++; }
+        done++;
+        pill();
+      });
+      showSyncPill('');
+      if (failed) return; // keep the current version; the next sync picks up where this stopped
+    }
+    if (changed) {
+      await cachePut(pid + '/manifest.bin', buf, version);
+      if (saved || VAULTS[pid]) activate(pid, next);
+      const keep = new Set([...wanted, 'manifest.bin'].map((f) => cacheUrl(pid + '/' + f)));
+      const prefix = cacheUrl(pid + '/');
       for (const req of await c.keys()) {
-        if (req.url.startsWith(prefix) && req.url !== cacheUrl(name)) await c.delete(req);
+        if (req.url.startsWith(prefix) && !keep.has(req.url)) await c.delete(req);
       }
     }
-    return html;
+  }
+  let syncRunning = false, lastSync = 0;
+  async function syncAll() {
+    if (syncRunning || !KEY) return;
+    syncRunning = true;
+    lastSync = Date.now();
+    const key = KEY;
+    try {
+      await projectsReady;
+      try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) { /* optional */ }
+      const open = parseRoute().pid;
+      const ids = PROJECTS.map((p) => p.id).sort((a, b) => (b === open) - (a === open));
+      for (const pid of ids) {
+        try {
+          await syncProject(pid, key);
+        } catch (err) {
+          if (err && err.name === 'OperationError' && key === KEY) {
+            store.del('nb:key');
+            return showLock('The passphrase has changed. Please enter it again.');
+          } // otherwise offline or a hiccup: the saved copy keeps working
+        }
+      }
+    } finally {
+      showSyncPill('');
+      syncRunning = false;
+    }
   }
 
   // ---------------------------------------------------------------- vault model
@@ -599,9 +714,7 @@ body::after {
     v.byPath = new Map();
     v.byTitle = new Map();
     for (const n of v.notes) {
-      const [fm, body] = parseFrontmatter(n.md);
-      n.fm = fm;
-      n.body = body;
+      n.fm = parseFrontmatter(n.head || '')[0];
       n.title = n.path.split('/').pop();
       n.dir = n.path.includes('/') ? n.path.slice(0, n.path.lastIndexOf('/')) : '';
       v.byPath.set(n.path.toLowerCase(), n);
@@ -1364,7 +1477,7 @@ body::after {
     if (t.html == null) {
       const here = location.hash;
       main().innerHTML = '<div class="loading"><div class="spinner"></div>Opening ' + esc(t.title) + '…</div>';
-      loadToolHtml(v.id, t).then((html) => {
+      readText(v.id, t.file).then((html) => {
         t.html = html;
         if (location.hash === here) renderTool(v, id, params);
       }).catch((err) => {
@@ -1381,7 +1494,7 @@ body::after {
       .replace(/<head\b[^>]*>/i, (m) => `${m}<script>window.NB_PARAMS=${nbParams};window.NB_RESTORED=${!!window.NB_RESTORED};<\/script>`);
   }
 
-  function renderSearch(v, q) {
+  async function renderSearch(v, q) {
     const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
     document.title = 'Search · ' + v.title;
     markActive(null);
@@ -1390,21 +1503,29 @@ body::after {
       main().innerHTML = '<div class="page"><h1>Search</h1><p class="count">Type in the search box above.</p></div>';
       return;
     }
+    const unread = v.notes.filter((n) => n.body == null);
+    let unavailable = 0;
+    if (unread.length) {
+      const here = location.hash;
+      main().innerHTML = '<div class="loading"><div class="spinner"></div>Searching…</div>';
+      await pool(unread, 12, async (n) => { try { await ensureBody(v, n); } catch (e) { unavailable++; } });
+      if (location.hash !== here) return;
+    }
     const clean = (s) => s.replace(/\[\[([^\]|]+)\|?([^\]]*)\]\]/g, (m, a, b) => b || a).replace(/[*_`#>]|^\s*-\s*\[.\]\s*|^\s*[-+]\s+/g, '').trim();
     const re = new RegExp('(' + terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
     const results = [];
     for (const n of v.notes) {
-      const hay = (n.title + '\n' + n.body).toLowerCase();
+      const hay = (n.title + '\n' + (n.body || '')).toLowerCase();
       if (!terms.every((t) => hay.includes(t))) continue;
       const tl = n.title.toLowerCase();
       let score = terms.reduce((a, t) => a + (tl.includes(t) ? 50 : 0) + Math.min(hay.split(t).length - 1, 20), 0);
-      const lines = n.body.split('\n').filter((l) => terms.some((t) => l.toLowerCase().includes(t)) && clean(l) && clean(l) !== n.title).slice(0, 3);
+      const lines = (n.body || '').split('\n').filter((l) => terms.some((t) => l.toLowerCase().includes(t)) && clean(l) && clean(l) !== n.title).slice(0, 3);
       results.push({ n, score, lines });
     }
     results.sort((a, b) => b.score - a.score);
     main().innerHTML = `<div class="page">
         <div class="note-head"><h1>“${esc(q)}”</h1></div>
-        <p class="count">${results.length} note${results.length === 1 ? '' : 's'}</p>
+        <p class="count">${results.length} note${results.length === 1 ? '' : 's'}${unavailable ? ` · ${unavailable} not on this device yet` : ''}</p>
         <ul class="results">${results.map((r) => `<li>
           <a class="rt" href="${url.note(v.id, r.n.path, 'hl=' + enc(q))}">${esc(r.n.title)}</a>
           ${r.n.dir ? `<div class="rp">${esc(r.n.dir.split('/').map(prettyDir).join(' › '))}</div>` : ''}
@@ -1433,6 +1554,17 @@ body::after {
   window.addEventListener('message', (e) => {
     if (!cur || !e.data) return;
     const d = e.data;
+    if (typeof d.nbItem === 'string') {
+      const frame = $('#main iframe');
+      if (!frame || e.source !== frame.contentWindow) return;
+      const pid = cur.v.id;
+      const tool = (VAULTS[pid].tools || []).find((t) => t.id === parseRoute().rest);
+      const file = tool && tool.data && tool.data[d.nbItem];
+      const reply = (r) => e.source.postMessage({ nbItemId: d.nbItemId, ...r }, '*');
+      if (!file) return reply({ error: 'not found' });
+      readText(pid, file).then((text) => reply({ data: JSON.parse(text) }), (err) => reply({ error: err.message || String(err) }));
+      return;
+    }
     if (typeof d.openNote !== 'string' && typeof d.openTool !== 'string') return;
     const f = $('#main iframe');
     if (!f || e.source !== f.contentWindow) return;
@@ -1473,6 +1605,22 @@ body::after {
     setProject(proj, v);
     main().classList.toggle('full', r.kind === 't');
     if (r.kind !== 's' && document.activeElement !== $('#q')) $('#q').value = '';
+    if (r.kind !== 't' && r.kind !== 's') {
+      const n = r.kind === 'n' ? resolve(v, r.rest) : v.homeNote;
+      if (n && n.body == null) {
+        const here = location.hash;
+        const wait = setTimeout(() => { main().innerHTML = '<div class="loading"><div class="spinner"></div>Opening…</div>'; }, 150);
+        try {
+          await ensureBody(v, n);
+        } catch (err) {
+          clearTimeout(wait);
+          if (location.hash === here) main().innerHTML = `<div class="page"><h1>Couldn't open ${esc(n.title)}</h1><p>${esc(err.message || err)}</p><p><a href="${here}" onclick="location.reload()">Try again</a></p></div>`;
+          return;
+        }
+        clearTimeout(wait);
+        if (location.hash !== here) return;
+      }
+    }
     if (r.kind === 'n') renderNote(v, resolve(v, r.rest), r.params, false);
     else if (r.kind === 't') renderTool(v, r.rest, r.params);
     else if (r.kind === 's') renderSearch(v, r.params.get('q') || '');
@@ -1519,8 +1667,17 @@ body::after {
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveLast(); });
     window.addEventListener('pagehide', saveLast);
     route().then(restoreScroll);
+    syncAll();
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastSync > 15 * 60e3) syncAll();
+    });
   }
 
+  let projectsReady = Promise.resolve();
+  if ('serviceWorker' in navigator) {
+    const base = location.pathname.replace(/(date\/)?[^/]*$/, '');
+    navigator.serviceWorker.register(base + 'sw.js', { scope: base }).catch(() => {});
+  }
   async function boot() {
     applyTheme();
     if (!window.crypto || !crypto.subtle || !window.DecompressionStream) {
@@ -1534,7 +1691,7 @@ body::after {
     const knownProjects = store.get('nb:projects');
     if (knownProjects && knownProjects.length) {
       PROJECTS = knownProjects;
-      fetchProjects().then((list) => { PROJECTS = list; }).catch(() => {});
+      projectsReady = fetchProjects().then((list) => { PROJECTS = list; }).catch(() => {});
     } else {
       try {
         PROJECTS = await fetchProjects();
