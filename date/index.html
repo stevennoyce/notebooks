@@ -565,9 +565,22 @@ body::after {
       while (i < items.length) await work(items[i++]);
     }));
   }
-  const vaultFiles = (v) => [
+  // Every file a version of a notebook names. A tool marked onDemand (its lazy items, e.g. one
+  // question bank per course) only has the items this device has opened downloaded and kept
+  // current (usedItems); the rest are fetched the first time a tool asks for them.
+  const usedKey = (pid, tid) => 'nb:used:' + pid + ':' + tid;
+  const usedItems = (pid, t) => store.get(usedKey(pid, t.id), []);
+  function markUsed(pid, tid, item) {
+    const used = store.get(usedKey(pid, tid), []);
+    if (!used.includes(item)) store.set(usedKey(pid, tid), [...used, item]);
+  }
+  const vaultFiles = (v, all) => [
     ...v.notes.map((n) => n.file),
-    ...(v.tools || []).flatMap((t) => [t.file, ...Object.values(t.data || {})]).filter(Boolean),
+    ...(v.tools || []).flatMap((t) => {
+      const data = t.data || {};
+      const items = all || !t.onDemand ? Object.values(data) : usedItems(v.id, t).map((k) => data[k]);
+      return [t.file, ...items];
+    }).filter(Boolean),
   ];
 
   // ---------------------------------------------------------------- background sync
@@ -654,7 +667,7 @@ body::after {
     if (changed) {
       await cachePut(pid + '/manifest.bin', buf, version);
       if (saved || VAULTS[pid]) activate(pid, next);
-      const keep = new Set([...wanted, 'manifest.bin'].map((f) => cacheUrl(pid + '/' + f)));
+      const keep = new Set([...vaultFiles(next, true), 'manifest.bin'].map((f) => cacheUrl(pid + '/' + f)));
       const prefix = cacheUrl(pid + '/');
       for (const req of await c.keys()) {
         if (req.url.startsWith(prefix) && !keep.has(req.url)) await c.delete(req);
@@ -1005,11 +1018,12 @@ body::after {
     });
     // inline code that names a tool file -> open the tool
     $$('code', root).forEach((c) => {
-      const tid = v.codeLinks && v.codeLinks[c.textContent.trim()];
-      if (!tid || c.closest('pre, a')) return;
+      const link = v.codeLinks && v.codeLinks[c.textContent.trim()];
+      if (!link || c.closest('pre, a')) return;
+      const [tid, qs] = link.split('?');  // "review?course=math-112" opens a tool with params
       const a = document.createElement('a');
       a.className = 'code-link';
-      a.href = url.tool(v.id, tid);
+      a.href = url.tool(v.id, tid, qs);
       c.replaceWith(a);
       a.appendChild(c);
     });
@@ -1563,7 +1577,10 @@ body::after {
       const file = tool && tool.data && tool.data[d.nbItem];
       const reply = (r) => e.source.postMessage({ nbItemId: d.nbItemId, ...r }, '*');
       if (!file) return reply({ error: 'not found' });
-      readText(pid, file).then((text) => reply({ data: JSON.parse(text) }), (err) => reply({ error: err.message || String(err) }));
+      readText(pid, file).then((text) => {
+        if (tool.onDemand) markUsed(pid, tool.id, d.nbItem);
+        reply({ data: JSON.parse(text) });
+      }, (err) => reply({ error: err.message || String(err) }));
       return;
     }
     if (typeof d.openNote !== 'string' && typeof d.openTool !== 'string') return;
